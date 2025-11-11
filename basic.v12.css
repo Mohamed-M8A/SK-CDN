@@ -337,7 +337,7 @@
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   padding: 6px 12px;
   border-radius: 8px;
-  margin-left: 12px;
+  margin-left: 8px;
 }
 
 .discount-percentage:empty {
