@@ -19,19 +19,22 @@
 }
 
 .product-title {
-  font-size: 30px !important;
-  font-weight: 600 !important;
-  color: #3c4c66 !important;
-  margin: 0 0 10px 0 !important;
-  line-height: 1.5 !important;
+  font-size: 32px !important;
+  font-weight: 700 !important;
+  background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  margin: 0 0 16px 0 !important;
+  line-height: 1.3 !important;
+  letter-spacing: -0.5px;
 }
 
 .short-description {
-  color: #2d2d38;            
-  font-style: normal;        
-  font-size: 16px;           
-  letter-spacing: 0.5px;
-  line-height: 1.5;
+  color: #64748b;
+  font-size: 17px;
+  letter-spacing: 0.3px;
+  line-height: 1.6;
+  font-weight: 400;
 }
 
 /* ============================
@@ -334,7 +337,7 @@
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   padding: 6px 12px;
   border-radius: 8px;
-  margin: 0;
+  margin-left: 4px;
 }
 
 .discount-percentage:empty {
