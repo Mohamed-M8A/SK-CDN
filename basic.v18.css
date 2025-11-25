@@ -681,8 +681,13 @@
   padding: 10px 25px;
   border-radius: 30px;
   background-color: #554bdd;
-  transform: translateY(-2px); 
+  transform: translateY(-2px);
   transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.Customer-Reviews .more-reviews-link a:hover {
+  background-color: #4a3ecf;
+  transform: translateY(0);
 }
 
 /* ============================
