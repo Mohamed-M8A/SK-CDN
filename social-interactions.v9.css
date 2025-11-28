@@ -3,6 +3,7 @@
 ========================= */
 
 #comments {
+  background: #ffffff;
   color: #333333;
   padding: 30px 25px;
   border-radius: 12px;
@@ -98,7 +99,7 @@
 .reply {
     padding: 18px;
     margin-bottom: 10px;
-    background-color: #e8ecf2;
+    background-color: #e8ecf2; /* اللون الأدكن للردود */
     border-radius: 8px;
 }
 
@@ -130,16 +131,16 @@
 }
 
 .comment .header .name {
-  font-size: 1.1em;
+  font-size: 1.1em; /* تكبير بسيط */
   color: #146aff;
 }
 
 .reply .header .name {
-  font-size: 1.05em;
+  font-size: 1.05em; /* تكبير بسيط */
 }
 
 .time {
-  font-size: 0.9em;
+  font-size: 0.9em; /* تكبير بسيط */
   color: #777;
   margin-right: auto;
 }
@@ -147,7 +148,7 @@
 .body {
     line-height: 1.7;
     margin-right: 50px;
-    font-size: 1.05em;
+    font-size: 1.05em; /* تكبير بسيط */
 }
 
 .reply-btn {
