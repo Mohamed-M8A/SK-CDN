@@ -41,7 +41,6 @@
    ✅ Images
 ============================== */
 
-/* الصورة الرئيسية */
 .main-image-container {
   position: relative;
   width: 100%;
@@ -60,7 +59,6 @@
   transition: transform 0.3s ease;
 }
 
-/* الصور المصغرة */
 .thumbnail-wrapper {
   position: relative;
   display: flex;
@@ -72,13 +70,15 @@
 
 .thumbnail-container {
   display: flex;
-  overflow: hidden;
-  max-width: 440px;
-  margin: auto;
+  overflow-x: auto;
+  overflow-y: hidden;
+  width: 100%;
+  max-width: 500px;
   gap: 10px;
   scroll-behavior: smooth;
-  justify-content: center;
+  justify-content: flex-start;
   direction: rtl;
+  -webkit-overflow-scrolling: touch;
 }
 
 .thumbnails-slider {
@@ -89,6 +89,7 @@
 }
 
 .thumbnail-container img {
+  flex-shrink: 0;
   width: 70px;
   height: 70px;
   object-fit: cover;
@@ -105,6 +106,7 @@
 .gallery-wrapper {
   position: relative;
   width: 100%;
+  max-width: 500px;
   margin-top: 20px;
   display: flex;
   align-items: center;
