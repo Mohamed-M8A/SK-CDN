@@ -77,7 +77,6 @@
   margin: auto;
   gap: 10px;
   scroll-behavior: smooth;
-  flex-wrap: wrap;
   justify-content: center;
   direction: rtl;
 }
