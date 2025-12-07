@@ -515,14 +515,17 @@
 /* ============================
    📲 مظهر موحد للجوال والتابلت (600 - 992px)
 ============================ */
-@media (min-width: 600px) and (max-width: 992px) {
-  .product-box { flex-direction: column; align-items: center; flex-wrap: nowrap; }
-  .product-info { width: 100%; text-align: center; }
-  .info-boxes-wrapper { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
-  .buy-button, .add-to-cart { width: 100% !important; height: 46px; font-size: 16px; }
-  .price-box { align-items: center; }
-  .short-description { text-align: center; }
-  .thumbnail-container { justify-content: center; flex-wrap: wrap; }
+@media (min-width: 600px) and (max-width: 992px){
+.product-box{flex-direction:column;align-items:center;flex-wrap:nowrap}
+.product-info{width:100%;text-align:start}
+.info-boxes-wrapper{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}
+.price-box{align-items:flex-start}
+.top-row{justify-content:flex-start;gap:14px}
+.price-info{flex-direction:row;align-items:center}
+.button-container{justify-content:center}
+.buy-button,.add-to-cart{width:260px;max-width:100%;height:48px;font-size:16px}
+.short-description{text-align:start}
+.thumbnail-container{justify-content:center;flex-wrap:wrap}
 }
 
 /* ============================
