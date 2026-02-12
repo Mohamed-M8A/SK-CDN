@@ -24,10 +24,10 @@ function showToast(msg){if(!toast)return;toast.textContent=msg;toast.classList.a
 const canonical=document.createElement("link");canonical.rel="canonical";canonical.href=window.location.origin+window.location.pathname;document.head.appendChild(canonical);if(paramCountry){const robots=document.createElement("meta");robots.name="robots";robots.content="noindex";document.head.appendChild(robots)}
 document.addEventListener('DOMContentLoaded',function(){var modal=document.querySelector('.share-modal');var openBtn=document.querySelector('.share-open-btn');var closeBtn=document.querySelector('.modal-close-btn');if(modal&&openBtn&&closeBtn){openBtn.onclick=function(){modal.style.display='block';document.body.style.overflow='hidden'}
 closeBtn.onclick=function(){modal.style.display='none';document.body.style.overflow='auto'}
-window.onclick=function(event){if(event.target==modal){modal.style.display='none';document.body.style.overflow='auto'}}}});function rmurl(e,t){var r=new RegExp(/\?m=0|&m=0|\?m=1|&m=1/g);if(r.test(e)){e=e.replace(r,"");if(t)window.history.replaceState({},document.title,e)}
+window.onclick=function(event){if(event.target==modal){modal.style.display='none';document.body.style.overflow='auto'}}}});const UIDManager={generate(){const now=new Date();const datePart=now.getFullYear().toString()+(now.getMonth()+1).toString().padStart(2,'0')+now.getDate().toString().padStart(2,'0')+now.getHours().toString().padStart(2,'0')+now.getMinutes().toString().padStart(2,'0')+now.getSeconds().toString().padStart(2,'0');const randomPart=Math.random().toString(36).substring(2,10).toUpperCase();return `ID-${datePart}-${randomPart}`},getPersistentId(){let id=localStorage.getItem("user_fingerprint");if(!id){id=this.generate();localStorage.setItem("user_fingerprint",id)}
+return id}};function rmurl(e,t){var r=new RegExp(/\?m=0|&m=0|\?m=1|&m=1/g);if(r.test(e)){e=e.replace(r,"");if(t)window.history.replaceState({},document.title,e)}
 return e}
 const currentUrl=rmurl(location.toString(),!0);var backTop=document.getElementById("back-to-top");window.addEventListener("scroll",function(){if(!backTop)return;if(this.pageYOffset>=1000){backTop.classList.remove("d-none")}else{backTop.classList.add("d-none")}},!1)
-
 
 // =================== Nav.js ===================
 
