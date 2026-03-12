@@ -167,259 +167,121 @@
 // =================== Binary Price History Chart ===================
 
 window.renderBinaryChart = function(buffer) {
-
-    try {
-
-        const view = new DataView(buffer);
-
-        const startMin = view.getUint32(8, true);
-
-        const epoch2025 = Date.UTC(2025, 0, 1);
-
-        const baseDate = new Date(epoch2025 + (startMin * 60 * 1000));
-
-        
-
-        const finalData = [];
-
-        const currency = (typeof getCurrencySymbol === "function") ? getCurrencySymbol() : "";
-
-
-
-        for (let i = 0; i < 365; i++) {
-
-            const priceRaw = view.getUint32(16 + (i * 4), true);
-
-            if (priceRaw > 0) {
-
-                const pointDate = new Date(baseDate.getTime());
-
-                pointDate.setUTCDate(baseDate.getUTCDate() + i);
-
-                finalData.push({
-
-                    date: pointDate.toLocaleDateString('ar-EG', { month: 'numeric', day: 'numeric', year: '2-digit' }),
-
-                    price: +(priceRaw / 100).toFixed(2)
-
-                });
-
-            }
-
-        }
-
-
-
-        const chartCanvas = document.getElementById("priceChart");
-
-        if (!finalData.length || !chartCanvas) return;
-
-
-
-        const parent = chartCanvas.parentElement;
-
-        parent.style.cssText = "position: relative; height: 550px; width: 100%;";
-
-        chartCanvas.style.height = "250px";
-
-
-
-        const prices = finalData.map(x => x.price);
-
-        const dates = finalData.map(x => x.date);
-
-        const min = Math.min(...prices);
-
-        const max = Math.max(...prices);
-
-        const avg = +(prices.reduce((a, b) => a + b, 0) / prices.length).toFixed(2);
-
-        const endPrice = prices[prices.length - 1];
-
-        const prevPrice = prices[prices.length - 2] || endPrice;
-
-
-
-        const getArrow = (value, compare) => {
-
-            if (value > compare) return `<span class="stat-arrow arrow-up">▲</span>`;
-
-            if (value < compare) return `<span class="stat-arrow arrow-down">▼</span>`;
-
-            return "";
-
-        };
-
-
-
-        const statsHtml = `
-
-            <div class="price-stats">
-
-                <div class="stat-item current">
-
-                    <strong>السعر الحالي:</strong> ${endPrice} ${currency} ${getArrow(endPrice, prevPrice)}
-
-                    <small style="font-size:12px;color:#666;">(${(endPrice - prevPrice).toFixed(2)} ${currency})</small>
-
-                </div>
-
-                <div class="stat-item"><strong>المتوسط:</strong> ${avg} ${currency} ${getArrow(avg, endPrice)}</div>
-
-                <div class="stat-item"><strong>أقل سعر:</strong> ${min} ${currency} ${getArrow(min, endPrice)}</div>
-
-                <div class="stat-item"><strong>أعلى سعر:</strong> ${max} ${currency} ${getArrow(max, endPrice)}</div>
-
-            </div>
-
-        `;
-
-
-
-        const oldStats = parent.querySelector(".price-stats");
-
-        if (oldStats) oldStats.remove();
-
-        chartCanvas.insertAdjacentHTML("afterend", statsHtml);
-
-
-
-        let tooltipEl = document.getElementById("chart-tooltip") || Object.assign(document.createElement("div"), {id: "chart-tooltip"});
-
-        if (!tooltipEl.parentElement) document.body.appendChild(tooltipEl);
-
-
-
-        const externalTooltipHandler = (context) => {
-
-            const { chart, tooltip } = context;
-
-            if (tooltip.opacity === 0) { tooltipEl.style.opacity = 0; tooltipEl.style.display = "none"; return; }
-
-
-
-            tooltipEl.style.display = "block";
-
-            tooltipEl.style.opacity = 1;
-
-
-
-            const dataIndex = tooltip.dataPoints[0].dataIndex;
-
-            const value = tooltip.dataPoints[0].raw;
-
-            const prev = dataIndex > 0 ? prices[dataIndex - 1] : value;
-
-            const diff = +(value - prev).toFixed(2);
-
-            const percent = prev !== 0 ? ((diff / prev) * 100).toFixed(1) : 0;
-
-            const arrow = diff > 0 ? `<span class="stat-arrow arrow-up">▲</span>` : diff < 0 ? `<span class="stat-arrow arrow-down">▼</span>` : `<span class="stat-arrow">-</span>`;
-
-
-
-            tooltipEl.innerHTML = `
-
-                <div class="tooltip-line" style="font-weight:bold;">${dates[dataIndex]}</div>
-
-                <div class="tooltip-line">السعر: ${value} ${currency}</div>
-
-                <div class="tooltip-line">التغير: ${arrow} ${diff} ${currency}</div>
-
-                <div class="tooltip-line">النسبة: ${percent}%</div>
-
-            `;
-
-
-
-            const position = chart.canvas.getBoundingClientRect();
-
-            const tooltipWidth = 160;
-
-            const pageWidth = window.innerWidth;
-
-            const chartLeft = position.left + window.pageXOffset;
-
-            const pointX = chartLeft + tooltip.caretX;
-
-
-
-            if (pointX > pageWidth * 0.7) {
-
-                tooltipEl.style.left = (pointX - tooltipWidth - 20) + 'px';
-
-            } else {
-
-                tooltipEl.style.left = (pointX + 10) + 'px';
-
-            }
-
-            tooltipEl.style.top = position.top + window.pageYOffset + tooltip.caretY - 40 + 'px';
-
-        };
-
-
-
-        const ctx = chartCanvas.getContext("2d");
-
-        if (window.myPriceChart) window.myPriceChart.destroy();
-
-
-
-        window.myPriceChart = new Chart(ctx, {
-
-            type: "line",
-
-            data: {
-
-                labels: dates,
-
-                datasets: [{
-
-                    label: "السعر",
-
-                    data: prices,
-
-                    borderColor: "#e74c3c",
-
-                    backgroundColor: "rgba(231,76,60,0.2)",
-
-                    borderWidth: 3,
-
-                    pointRadius: 4,
-
-                    pointHoverRadius: 6,
-
-                    fill: true,
-
-                    tension: 0.2
-
-                }]
-
-            },
-
-            options: {
-
-                responsive: true,
-
-                maintainAspectRatio: false,
-
-                interaction: { mode: 'index', intersect: false },
-
-                plugins: { tooltip: { enabled: false, external: externalTooltipHandler } },
-
-                scales: {
-
-                    x: { ticks: { maxTicksLimit: 6 } },
-
-                    y: { position: 'right' }
-
-                }
-
-            }
-
-        });
-
-    } catch (err) {}
-
+    try {
+        const view = new DataView(buffer);
+        const startMin = view.getUint32(8, true);
+        const epoch2025 = Date.UTC(2025, 0, 1);
+        const baseDate = new Date(epoch2025 + (startMin * 60 * 1000));
+        
+        const finalData = [];
+        const currency = (typeof getCurrencySymbol === "function") ? getCurrencySymbol() : "";
+
+        for (let i = 0; i < 365; i++) {
+            const priceRaw = view.getUint32(16 + (i * 4), true);
+            if (priceRaw > 0) {
+                const pointDate = new Date(baseDate.getTime());
+                pointDate.setUTCDate(baseDate.getUTCDate() + i);
+                finalData.push({
+                    date: pointDate.toLocaleDateString('ar-EG', { month: 'numeric', day: 'numeric', year: 'numeric' }),
+                    price: +(priceRaw / 100).toFixed(2)
+                });
+            }
+        }
+
+        const chartCanvas = document.getElementById("priceChart");
+        if (!finalData.length || !chartCanvas) return;
+
+        const parent = chartCanvas.parentElement;
+        parent.style.cssText = "position: relative; width: 100%; height: auto; min-height: 450px; margin-bottom: 30px; clear: both;";
+        chartCanvas.style.height = "300px"; 
+
+        const prices = finalData.map(x => x.price);
+        const dates = finalData.map(x => x.date);
+        const min = Math.min(...prices);
+        const max = Math.max(...prices);
+        const avg = +(prices.reduce((a, b) => a + b, 0) / prices.length).toFixed(2);
+        const endPrice = prices[prices.length - 1];
+        const prevPrice = prices[prices.length - 2] || endPrice;
+
+        const getArrow = (v, c) => v > c ? `<span class="stat-arrow arrow-up">▲</span>` : v < c ? `<span class="stat-arrow arrow-down">▼</span>` : "";
+
+        const statsHtml = `
+            <div class="price-stats">
+                <div class="stat-item current">
+                    <div><strong>السعر الحالي</strong></div>
+                    <div>${endPrice} ${currency} ${getArrow(endPrice, prevPrice)} 
+                    <small style="display:block; font-size:11px; color:#666;">(${(endPrice - prevPrice).toFixed(2)})</small></div>
+                </div>
+                <div class="stat-item"><strong>المتوسط</strong> <span>${avg} ${currency}</span></div>
+                <div class="stat-item"><strong>الأقل</strong> <span class="arrow-down">${min}</span></div>
+                <div class="stat-item"><strong>الأعلى</strong> <span class="arrow-up">${max}</span></div>
+            </div>
+        `;
+
+        const oldStats = parent.querySelector(".price-stats");
+        if (oldStats) oldStats.remove();
+        chartCanvas.insertAdjacentHTML("afterend", statsHtml);
+
+        let tooltipEl = document.getElementById("chart-tooltip") || Object.assign(document.createElement("div"), {id: "chart-tooltip"});
+        if (!tooltipEl.parentElement) document.body.appendChild(tooltipEl);
+
+        const externalTooltipHandler = (context) => {
+            const { chart, tooltip } = context;
+            if (tooltip.opacity === 0) { tooltipEl.style.opacity = 0; tooltipEl.style.display = "none"; return; }
+
+            tooltipEl.style.display = "block";
+            tooltipEl.style.opacity = 1;
+
+            const dataIndex = tooltip.dataPoints[0].dataIndex;
+            const value = tooltip.dataPoints[0].raw;
+            const prev = dataIndex > 0 ? prices[dataIndex - 1] : value;
+            const diff = +(value - prev).toFixed(2);
+            const percent = prev !== 0 ? ((diff / prev) * 100).toFixed(1) : 0;
+            const arrow = diff > 0 ? `▲` : diff < 0 ? `▼` : `-`;
+
+            tooltipEl.innerHTML = `
+                <div class="tooltip-line" style="border-bottom:1px solid #444; padding-bottom:5px; margin-bottom:5px;">${dates[dataIndex]}</div>
+                <div class="tooltip-line">السعر: ${value} ${currency}</div>
+                <div class="tooltip-line">التغير: ${arrow} ${diff}</div>
+                <div class="tooltip-line">النسبة: ${percent}%</div>
+            `;
+
+            const pos = chart.canvas.getBoundingClientRect();
+            tooltipEl.style.left = (pos.left + window.pageXOffset + tooltip.caretX + 10) + 'px';
+            tooltipEl.style.top = (pos.top + window.pageYOffset + tooltip.caretY - 60) + 'px';
+        };
+
+        const ctx = chartCanvas.getContext("2d");
+        if (window.myPriceChart) window.myPriceChart.destroy();
+
+        window.myPriceChart = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: dates,
+                datasets: [{
+                    data: prices,
+                    borderColor: "#e74c3c",
+                    backgroundColor: "rgba(231,76,60,0.1)",
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: { enabled: false, external: externalTooltipHandler } 
+                },
+                scales: {
+                    x: { ticks: { maxTicksLimit: 5, font: { size: 10 } }, grid: { display: false } },
+                    y: { position: 'right', ticks: { font: { size: 10 } } }
+                }
+            }
+        });
+    } catch (err) { console.log(err); }
 };
