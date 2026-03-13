@@ -1,5 +1,3 @@
-import { Store } from './DataEngine.js';
-
 class Renderer {
     constructor(containerId, placeholder) {
         this.container = document.getElementById(containerId);
@@ -16,7 +14,7 @@ class Renderer {
         }, { rootMargin: "150px" });
     }
 
-    static呈现toBase64URL(bytes) {
+    static toBase64URL(bytes) {
         let lastIndex = bytes.length - 1;
         while (lastIndex >= 0 && bytes[lastIndex] === 0) lastIndex--;
         const cleanBytes = bytes.slice(0, lastIndex + 1);
@@ -31,7 +29,7 @@ class Renderer {
         card.className = "post-card title-link";
         const symbol = localStorage.getItem("CurrencySymbol") || "ر.س";
         const data = product.feed;
-        const slug = Renderer.呈现toBase64URL(product.imgSlug);
+        const slug = Renderer.toBase64URL(product.imgSlug);
         let badgeHTML = '', metaHTML = '';
 
         if (data) {
@@ -81,8 +79,16 @@ async function startWidget() {
     if (!root) return;
     root.innerHTML = `<div id="product-posts" class="product-grid"></div><div id="loader" class="loader-container" style="display:none;"><div class="spinner"></div></div><button id="load-more" style="display:none;">عرض المزيد</button>`;
     const grid = document.getElementById('product-posts'), loadMoreBtn = document.getElementById('load-more'), loader = document.getElementById('loader');
-    const store = new Store(WIDGET_CONFIG.BASE_URL), renderer = new Renderer('product-posts', WIDGET_CONFIG.PLACEHOLDER);
+    
+    if (typeof Store === 'undefined') {
+        console.error("Store is not defined. Make sure DataEngine.js is loaded.");
+        return;
+    }
+
+    const store = new Store(WIDGET_CONFIG.BASE_URL);
+    const renderer = new Renderer('product-posts', WIDGET_CONFIG.PLACEHOLDER);
     let currentIndex = 0;
+
     try {
         loader.style.display = 'block';
         await store.init(localStorage.getItem("Cntry") || "SA");
@@ -96,7 +102,11 @@ async function startWidget() {
         };
         renderNextBatch();
         loadMoreBtn.onclick = renderNextBatch;
-    } catch (err) { console.error("Widget Error:", err); } finally { loader.style.display = 'none'; }
+    } catch (err) { 
+        console.error("Widget Error:", err); 
+    } finally { 
+        loader.style.display = 'none'; 
+    }
 }
 
 document.addEventListener("DOMContentLoaded", startWidget);
