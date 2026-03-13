@@ -161,6 +161,8 @@
     };
 })();
 
+// =================== Promo ===================
+
 window.injectPromo = function(promoData) {
     let container = document.querySelector('.coupon-container');
     const shelf = document.getElementById('dynamic-shelf');
@@ -263,6 +265,9 @@ window.renderBinaryChart = function(buffer) {
             }
         }
 
+// =================== Chart ===================
+
+        
         const chartCanvas = document.getElementById("priceChart");
         if (!finalData.length || !chartCanvas) return;
 
