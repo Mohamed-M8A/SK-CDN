@@ -272,11 +272,9 @@ window.renderBinaryChart = function(buffer) {
 
         const prices = finalData.map(x => x.price);
         const dates = finalData.map(x => x.date);
-        const min = Math.min(...prices);
-        const max = Math.max(...prices);
+        const min = Math.min(...prices), max = Math.max(...prices);
         const avg = +(prices.reduce((a, b) => a + b, 0) / prices.length).toFixed(2);
-        const current = prices[prices.length - 1];
-        const prev = prices[prices.length - 2] || current;
+        const current = prices[prices.length - 1], prev = prices[prices.length - 2] || current;
 
         const getArrow = (v, c) => v > c ? `<span class="stat-arrow arrow-up">▲</span>` : v < c ? `<span class="stat-arrow arrow-down">▼</span>` : "";
 
@@ -310,14 +308,7 @@ window.renderBinaryChart = function(buffer) {
             const diff = +(val - pVal).toFixed(2);
             const perc = pVal !== 0 ? ((diff / pVal) * 100).toFixed(1) : 0;
             const arr = diff > 0 ? `<span class="stat-arrow arrow-up">▲</span>` : diff < 0 ? `<span class="stat-arrow arrow-down">▼</span>` : `<span class="stat-arrow">-</span>`;
-
-            tooltipEl.innerHTML = `
-                <div class="tooltip-line" style="font-weight:bold;">${dates[idx]}</div>
-                <div class="tooltip-line">السعر: ${val} ${currency}</div>
-                <div class="tooltip-line">التغير: ${arr} ${diff} ${currency}</div>
-                <div class="tooltip-line">النسبة: ${perc}%</div>
-            `;
-
+            tooltipEl.innerHTML = `<div class="tooltip-line" style="font-weight:bold;">${dates[idx]}</div><div class="tooltip-line">السعر: ${val} ${currency}</div><div class="tooltip-line">التغير: ${arr} ${diff} ${currency}</div><div class="tooltip-line">النسبة: ${perc}%</div>`;
             const pos = chart.canvas.getBoundingClientRect();
             const pX = pos.left + window.pageXOffset + tooltip.caretX;
             tooltipEl.style.left = (pX > window.innerWidth * 0.7) ? (pX - 180) + 'px' : (pX + 10) + 'px';
@@ -326,6 +317,9 @@ window.renderBinaryChart = function(buffer) {
 
         const ctx = chartCanvas.getContext("2d");
         if (window.myPriceChart) window.myPriceChart.destroy();
+
+        chartCanvas.parentElement.style.height = "300px"; 
+
         window.myPriceChart = new Chart(ctx, {
             type: "line",
             data: {
@@ -335,19 +329,21 @@ window.renderBinaryChart = function(buffer) {
                     borderColor: "#e74c3c",
                     backgroundColor: "rgba(231,76,60,0.1)",
                     borderWidth: 2,
-                    pointRadius: 2,
-                    pointHoverRadius: 5,
+                    pointRadius: 3,
                     fill: true,
+                    tension: 0 
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: false,
+                elements: { line: { stepped: false } },
                 interaction: { mode: 'index', intersect: false },
                 plugins: { legend: { display: false }, tooltip: { enabled: false, external: externalTooltipHandler } },
                 scales: {
-                    x: { ticks: { maxTicksLimit: 6 }, grid: { display: false } },
-                    y: { position: 'right', grid: { color: '#f0f0f0' } }
+                    x: { ticks: { maxTicksLimit: 7 }, grid: { display: false } },
+                    y: { position: 'right', grid: { color: '#f0f0f0' }, beginAtZero: false }
                 }
             }
         });
