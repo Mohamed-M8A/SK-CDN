@@ -1,0 +1,25 @@
+{
+  "short_name": "ISeekPrice",
+  "name": "ISeekPrice - مقارنة الأسعار و العروض اصبح بين يديك الآن",
+  "description": "تطبيق تسوق ذكي يتيح لك تجربة تسوق افضل",
+  "icons": [
+    {
+      "src": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh7g63iENevOigVi9lnvd9DYi2TUPjSKCYSZvjvzs7AjNderuoeFc0vGllEYuYDeSX7PF_OtSQrbQPt4ZevPF3wxKOK4_rZ0Rf4gyfCvS0McGP8SmAl6ISZkyCnZdKAvW2OL6F2YfUG9a9fwzMZYZTDHtHy_QF8VYKhTkjrss-snxUWtSzn7xhYDq01/s320/Black%20White%20Minimalist%20Initials%20Logo%20(1)-Photoroom.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh7g63iENevOigVi9lnvd9DYi2TUPjSKCYSZvjvzs7AjNderuoeFc0vGllEYuYDeSX7PF_OtSQrbQPt4ZevPF3wxKOK4_rZ0Rf4gyfCvS0McGP8SmAl6ISZkyCnZdKAvW2OL6F2YfUG9a9fwzMZYZTDHtHy_QF8VYKhTkjrss-snxUWtSzn7xhYDq01/s320/Black%20White%20Minimalist%20Initials%20Logo%20(1)-Photoroom.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "https://souq-alkul.blogspot.com/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ff0026",
+  "lang": "ar",
+  "dir": "rtl"
+}
