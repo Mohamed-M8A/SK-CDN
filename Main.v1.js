@@ -111,7 +111,7 @@ class Renderer {
         const data = product.feed;
         
         const slug = Renderer.toBase64URL(product.imgSlug);
-        const imageUrl = `https://blogger.googleusercontent.com/img/b/R29vZ2xl/${slug}/w320-h320/p.webp`;
+        const imageUrl = `https://blogger.googleusercontent.com/img/b/R29vZ2xl/${slug}/w220-h220/p.webp`;
         
         let badgeHTML = '', metaHTML = '';
         if (data) {
