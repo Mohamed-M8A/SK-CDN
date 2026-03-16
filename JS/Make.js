@@ -263,7 +263,7 @@ window.renderBinaryChart = function(buffer) {
                 const pDate = new Date(baseDate.getTime());
                 pDate.setUTCDate(baseDate.getUTCDate() + i);
                 finalData.push({
-                    date: pDate.toLocaleDateString('ar-EG', { month: 'numeric', day: 'numeric', year: '2-digit' }),
+                    date: pDate.toLocaleDateString('ar-EG', { month: 'numeric', day: 'numeric', year: 'numeric' }),
                     price: +(priceRaw / 100).toFixed(2)
                 });
             }
