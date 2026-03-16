@@ -279,14 +279,14 @@ window.renderBinaryChart = function(buffer) {
         const finalData = [];
         const currency = (typeof getCurrencySymbol === "function") ? getCurrencySymbol() : "";
 
-        const limit = Math.min(priceCount, 365);
-
-        for (let i = 0; i < limit; i++) {
+        for (let i = 0; i < priceCount; i++) {
             const offset = 20 + (i * 8);
+            if (offset + 8 > buffer.byteLength) break;
+
             const timeInMinutes = view.getUint32(offset, true);
             const priceRaw = view.getUint32(offset + 4, true);
 
-            if (timeInMinutes > 0) {
+            if (timeInMinutes > 0 && priceRaw > 0) {
                 const pDate = new Date(Date.UTC(2025, 0, 1) + (timeInMinutes * 60 * 1000));
                 finalData.push({
                     date: pDate.toLocaleDateString('ar-EG', { month: 'numeric', day: 'numeric', year: 'numeric' }),
