@@ -249,18 +249,25 @@ window.copyCoupon = function(code) {
 window.renderBinaryChart = function(buffer) {
     try {
         const view = new DataView(buffer);
-        const startMin = view.getUint32(8, true);
-        const baseDate = new Date(Date.UTC(2025, 0, 1) + (startMin * 60 * 1000));
-        const finalData = [];
+        const priceCount = view.getUint32(16, true);
+        const lastUpdateMin = view.getUint32(12, true);
         const currency = (typeof getCurrencySymbol === "function") ? getCurrencySymbol() : "";
 
-        for (let i = 0; i < 365; i++) {
-            const priceRaw = view.getUint32(16 + (i * 4), true);
+        if (priceCount === 0) return;
+
+        const finalData = [];
+        const limit = Math.min(priceCount, 365);
+        
+        const referenceDate = new Date(Date.UTC(2025, 0, 1)); 
+
+        for (let i = 0; i < limit; i++) {
+            const priceRaw = view.getInt32(20 + (i * 4), true);
             if (priceRaw > 0) {
-                const pDate = new Date(baseDate.getTime());
-                pDate.setUTCDate(baseDate.getUTCDate() + i);
+                const pDate = new Date(referenceDate.getTime() + (lastUpdateMin * 60 * 1000));
+                pDate.setUTCDate(pDate.getUTCDate() - (limit - 1 - i));
+
                 finalData.push({
-                    date: pDate.toLocaleDateString('ar-EG', { month: 'numeric', day: 'numeric', year: '2-digit' }),
+                    date: pDate.toLocaleDateString('ar-EG', { month: 'numeric', day: 'numeric' }),
                     price: +(priceRaw / 100).toFixed(2)
                 });
             }
@@ -317,7 +324,6 @@ window.renderBinaryChart = function(buffer) {
 
         const ctx = chartCanvas.getContext("2d");
         if (window.myPriceChart) window.myPriceChart.destroy();
-
         chartCanvas.parentElement.style.height = "300px"; 
 
         window.myPriceChart = new Chart(ctx, {
@@ -338,8 +344,6 @@ window.renderBinaryChart = function(buffer) {
                 responsive: true,
                 maintainAspectRatio: false,
                 animation: false,
-                elements: { line: { stepped: false } },
-                interaction: { mode: 'index', intersect: false },
                 plugins: { legend: { display: false }, tooltip: { enabled: false, external: externalTooltipHandler } },
                 scales: {
                     x: { ticks: { maxTicksLimit: 7 }, grid: { display: false } },
