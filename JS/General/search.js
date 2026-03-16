@@ -1,5 +1,5 @@
 // =================== ✅ Search ===================
-const searchPageURL = "https://souq-alkul.blogspot.com/p/search.html";
+const searchPageURL = "https://iseekprice.blogspot.com/p/search.html";
 const input = document.getElementById("searchInput");
 const form = document.querySelector(".search-box-form");
 const historyDropdown = document.getElementById("searchHistoryDropdown");
@@ -144,7 +144,7 @@ if (input) {
         ];
 
         function generateLink(cat) {
-            const base = "https://souq-alkul.blogspot.com/p/search.html";
+            const base = "https://iseekprice.blogspot.com/p/search.html";
             return `${base}?label=${encodeURIComponent(cat.name)}`;
         }
 
