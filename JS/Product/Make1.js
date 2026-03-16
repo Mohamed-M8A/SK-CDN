@@ -78,6 +78,32 @@
     const activeCountry = localStorage.getItem("Cntry") || "SA";
     const formatPrice = num => parseFloat(num).toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
+    
+    window.renderSKUs = function(skuList) {
+    const skuWrapper = document.getElementById('sku-images-wrapper') || Object.assign(document.createElement('div'), {id: 'sku-images-wrapper'});
+    skuWrapper.style.display = 'contents';
+    skuWrapper.innerHTML = "";
+    
+    const thumbSlider = document.querySelector('.thumbnails-slider');
+    if (thumbSlider) thumbSlider.appendChild(skuWrapper);
+
+    skuList.forEach(item => {
+        const img = document.createElement("img");
+        img.src = item.image;
+        img.alt = item.props;
+        img.title = item.props;
+        img.loading = "lazy";
+        
+        img._skuData = item; 
+        
+        img.addEventListener('click', () => {
+            if (typeof window.updateSKUPrice === "function") window.updateSKUPrice(item);
+        });
+        
+        skuWrapper.appendChild(img);
+    });
+};
+    
     window.injectData = function(data) {
         UILayout.injectEmptyShelf();
         const config = countryInfo[activeCountry] || countryInfo["SA"];
