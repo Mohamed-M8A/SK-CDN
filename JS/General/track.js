@@ -10,7 +10,7 @@
 
     const getCleanUrl = (url) => {
       if (!url) return "";
-      return url.replace("https://souq-alkul.blogspot.com", "") || "/";
+      return url.replace("https://iseekprice.blogspot.com", "") || "/";
     };
 
     const detectOS = () => {
@@ -57,7 +57,7 @@
       if (!target) return;
 
       if (target.tagName === "A") {
-        if (target.href && !target.href.includes("souq-alkul.blogspot.com") && !target.href.startsWith("javascript")) {
+        if (target.href && !target.href.includes("iseekprice.blogspot.com") && !target.href.startsWith("javascript")) {
           exitUrl = target.href;
           if (!actionsList.includes("Exit Click")) actionsList.push("Exit Click");
         }
