@@ -275,16 +275,16 @@ window.copyCoupon = function(code) {
 window.renderBinaryChart = function(buffer) {
     try {
         const view = new DataView(buffer);
-        const priceCount = view.getUint32(16, true);
+        const priceCount = view.getUint32(8, true);
         const finalData = [];
         const currency = (typeof getCurrencySymbol === "function") ? getCurrencySymbol() : "";
 
         for (let i = 0; i < priceCount; i++) {
-            const offset = 20 + (i * 8);
+            const offset = 12 + (i * 8);
             if (offset + 8 > buffer.byteLength) break;
 
             const timeInMinutes = view.getUint32(offset, true);
-            const priceRaw = view.getUint32(offset + 4, true);
+            const priceRaw = view.getInt32(offset + 4, true);
 
             if (timeInMinutes > 0 && priceRaw > 0) {
                 const pDate = new Date(Date.UTC(2025, 0, 1) + (timeInMinutes * 60 * 1000));
@@ -349,8 +349,7 @@ window.renderBinaryChart = function(buffer) {
 
         const ctx = chartCanvas.getContext("2d");
         if (window.myPriceChart) window.myPriceChart.destroy();
-
-        chartCanvas.parentElement.style.height = "300px"; 
+        chartCanvas.parentElement.style.height = "300px";
 
         window.myPriceChart = new Chart(ctx, {
             type: "line",
@@ -363,7 +362,7 @@ window.renderBinaryChart = function(buffer) {
                     borderWidth: 2,
                     pointRadius: 3,
                     fill: true,
-                    tension: 0 
+                    tension: 0
                 }]
             },
             options: {
