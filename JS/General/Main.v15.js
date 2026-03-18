@@ -138,7 +138,7 @@ async function startWidget() {
     };
 
     const urlParams = new URLSearchParams(window.location.search);
-    const query = urlParams.get('q');
+    const query = urlParams.get('query');
 
     loadMoreBtn.onclick = renderNextBatch;
     worker.postMessage({
