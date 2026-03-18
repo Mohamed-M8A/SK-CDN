@@ -121,7 +121,7 @@ createCard(product, domain, feed, meta) {
             <div class="product-meta-details">
                 <div class="meta-item">★ ${feed.score}</div>
                 <div class="meta-item">${feed.orders}+ طلب</div>
-                <div class="meta-item">${feed.delivery.min}-${feed.delivery.max} يوم</div>
+                <div class="meta-item">${feed.delivery.max}-${feed.delivery.min} يوم</div>
             </div>`;
     }
     
