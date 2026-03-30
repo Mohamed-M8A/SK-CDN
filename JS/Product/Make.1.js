@@ -319,9 +319,9 @@ window.renderBinaryChart = function(buffer) {
         const avg = +(prices.reduce((a, b) => a + b, 0) / prices.length).toFixed(2);
         const current = prices[prices.length - 1], prev = prices[prices.length - 2] || current;
 
-        const getArrow = (curr, old) => {
-            if (curr > old) return `<span class="stat-arrow arrow-up">▲</span>`;
-            if (curr < old) return `<span class="stat-arrow arrow-down">▼</span>`;
+        const getArrowHTML = (curr, old) => {
+            if (curr > old) return '<span class="stat-arrow arrow-up">▲</span>';
+            if (curr < old) return '<span class="stat-arrow arrow-down">▼</span>';
             return "";
         };
 
@@ -333,13 +333,13 @@ window.renderBinaryChart = function(buffer) {
         }
 
         const diff = +(current - prev).toFixed(2);
-        const diffText = diff > 0 ? `+${diff}` : diff;
+        const diffSign = diff > 0 ? "+" : "";
 
         statsContainer.innerHTML = `
             <div class="stat-item current">
                 <strong>السعر الحالي</strong>
-                <span>${current} ${currency} ${getArrow(current, prev)}</span>
-                <small style="font-size:11px;color:#666;margin-top:2px;display:block;">(${diffText} ${currency})</small>
+                <span>${current} ${currency} ${getArrowHTML(current, prev)}</span>
+                <small style="font-size:11px;color:#666;margin-top:2px;display:block;">(${diffSign}${diff} ${currency})</small>
             </div>
             <div class="stat-container-inner" style="display:flex; flex-wrap:wrap; gap:10px; width:100%;">
                 <div class="stat-item"><strong>المتوسط</strong><span>${avg} ${currency}</span></div>
@@ -360,8 +360,14 @@ window.renderBinaryChart = function(buffer) {
             const pVal = idx > 0 ? prices[idx - 1] : val;
             const d = +(val - pVal).toFixed(2);
             const perc = pVal !== 0 ? ((d / pVal) * 100).toFixed(1) : 0;
-            const arr = getArrow(val, pVal) || `<span class="stat-arrow">-</span>`;
-            tooltipEl.innerHTML = `<div class="tooltip-line" style="font-weight:bold;">${dates[idx]}</div><div class="tooltip-line">السعر: ${val} ${currency}</div><div class="tooltip-line">التغير: ${arr} ${d} ${currency}</div><div class="tooltip-line">النسبة: ${perc}%</div>`;
+            const arrow = getArrowHTML(val, pVal) || '<span class="stat-arrow">-</span>';
+            
+            tooltipEl.innerHTML = `
+                <div class="tooltip-line" style="font-weight:bold;">${dates[idx]}</div>
+                <div class="tooltip-line">السعر: ${val} ${currency}</div>
+                <div class="tooltip-line">التغير: ${arrow} ${d} ${currency}</div>
+                <div class="tooltip-line">النسبة: ${perc}%</div>`;
+
             const pos = chart.canvas.getBoundingClientRect();
             const pX = pos.left + window.pageXOffset + tooltip.caretX;
             tooltipEl.style.left = (pX > window.innerWidth * 0.7) ? (pX - 180) + 'px' : (pX + 10) + 'px';
