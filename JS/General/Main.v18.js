@@ -55,9 +55,9 @@ class Renderer {
                 : `${feed.delivery.max}-${feed.delivery.min} يوم`;
 
             if (feed.status.inStock === 0) {
-                badgeHTML = '<div class="discount-badge badge-out">نفذت</div>';
+                badgeHTML = '<div class="discount-badge out-of-stock">نفذت</div>';
             } else if (feed.status.promo === 1) {
-                badgeHTML = '<div class="discount-badge badge-promo">عرض خاص</div>';
+                badgeHTML = '<div class="discount-badge promo">عرض خاص</div>';
             } else if (feed.original > feed.price) {
                 const discount = Math.round(((feed.original - feed.price) / feed.original) * 100);
                 badgeHTML = `<div class="discount-badge">-${discount}%</div>`;
@@ -135,7 +135,7 @@ async function startWidget() {
 
     const renderNextBatch = () => {
         if (storeData.core.length === 0) {
-            grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:50px;">لا توجد نتائج تطابق بحثك</div>';
+            grid.innerHTML = '<div class="no-results">لا توجد نتائج تطابق بحثك</div>';
             return;
         }
         const size = currentIndex === 0 ? WIDGET_CONFIG.INITIAL_SIZE : WIDGET_CONFIG.BATCH_SIZE;
@@ -153,7 +153,7 @@ async function startWidget() {
             renderNextBatch();
         } else if (e.data.type === 'ERROR') {
             loader.style.display = 'none';
-            grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;">حدث خطأ أثناء تحميل البيانات</div>';
+            grid.innerHTML = '<div class="error-msg">حدث خطأ أثناء تحميل البيانات</div>';
         }
     };
 
