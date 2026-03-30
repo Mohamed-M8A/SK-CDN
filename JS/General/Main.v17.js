@@ -4,9 +4,7 @@ const COUNTRY_MAP = {
     "OM": { symbol: "ر.ع" },
     "MA": { symbol: "د.م" },
     "DZ": { symbol: "د.ج" },
-    "TN": { symbol: "د.ت" },
-    "KW": { symbol: "د.ك" },
-    "QA": { symbol: "ر.ق" }
+    "TN": { symbol: "د.ت" }
 };
 
 class Renderer {
@@ -57,9 +55,9 @@ class Renderer {
                 : `${feed.delivery.max}-${feed.delivery.min} يوم`;
 
             if (feed.status.inStock === 0) {
-                badgeHTML = '<div class="discount-badge" style="background:#ff7675">نفذت</div>';
+                badgeHTML = '<div class="discount-badge badge-out">نفذت</div>';
             } else if (feed.status.promo === 1) {
-                badgeHTML = '<div class="discount-badge" style="background:#0984e3">عرض خاص</div>';
+                badgeHTML = '<div class="discount-badge badge-promo">عرض خاص</div>';
             } else if (feed.original > feed.price) {
                 const discount = Math.round(((feed.original - feed.price) / feed.original) * 100);
                 badgeHTML = `<div class="discount-badge">-${discount}%</div>`;
@@ -67,12 +65,12 @@ class Renderer {
             
             metaHTML = `
                 <div class="price-display">
-                    <span class="discounted-price" style="color:#00b894; font-weight:bold;">${price} ${symbol}</span>
+                    <span class="discounted-price">${price} ${symbol}</span>
                     ${feed.original > feed.price ? `<span class="original-price">${original} ${symbol}</span>` : ''}
                 </div>
                 <div class="product-meta-details">
                     <div class="meta-item">★ ${feed.score}</div>
-                    <div class="meta-item">${feed.orders.toLocaleString()} مبيعات</div>
+                    <div class="meta-item">${feed.orders.toLocaleString()} تم بيع</div>
                     <div class="meta-item">${deliveryTime}</div>
                 </div>`;
         }
