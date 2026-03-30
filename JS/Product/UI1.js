@@ -133,7 +133,6 @@ const thumbContainer = document.querySelector('.thumbnail-container');
     applyImageStyle(modalImage);
   };
 
-
 // ===================================================
 // ✅ Buttons Text
 // ===================================================
