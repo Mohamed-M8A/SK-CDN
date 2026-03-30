@@ -150,40 +150,51 @@
             if (discountEl) discountEl.textContent = `-${Math.round((diff / pOriginal) * 100)}%`;
         }
 
-        const shipLabel = document.getElementById("shipLabel");
-        if (shipLabel) shipLabel.textContent = `الشحن إلى ${countryName}`;
-        
-        const shipToValue = document.querySelector(".ship-to-value");
-        if (shipToValue) {
-            const canShip = data.minDelivery > 0;
-            shipToValue.textContent = canShip ? "متوفر" : "غير متوفر";
-            shipToValue.style.color = canShip ? "#2e7d32" : "#c62828";
-        }
-        
+          const shipLabel = document.getElementById("shipLabel");
+          if (shipLabel) shipLabel.textContent = `الشحن إلى ${countryName}`;
+
+          const shipToValue = document.querySelector(".ship-to-value");
+          if (shipToValue) {
+          const canShip = data.minDelivery > 0;
+          shipToValue.textContent = canShip ? "متوفر" : "غير متوفر";
+          shipToValue.style.color = canShip ? "#00b894" : "#ff7675";
+      }
+
         document.querySelectorAll(".fee-value").forEach(el => {
-            el.textContent = data.shippingFee <= 0 ? "مجاني" : `${formatPrice(data.shippingFee)} ${symbol}`;
-        });
-        
-        document.querySelectorAll(".time-value").forEach(el => {
-            el.textContent = `${data.maxDelivery}-${data.minDelivery} أيام`;
-        });
+        const isFree = data.shippingFee <= 0;
+        el.textContent = isFree ? "شحن مجاني" : `${formatPrice(data.shippingFee)} ${symbol}`;
+        if (isFree) {
+        el.style.color = "#00b894";
+        el.style.fontWeight = "bold";
+    }
+});
 
-        const availValue = document.querySelector(".avail-value");
-        if (availValue) {
-            availValue.textContent = data.inStock ? "متوفر" : "نفذت الكمية";
-            availValue.style.color = data.inStock ? "#2e7d32" : "#c62828";
-        }
+document.querySelectorAll(".time-value").forEach(el => {
+    const min = data.minDelivery;
+    const max = data.maxDelivery;
+    if (min === max || !max) {
+        el.textContent = `${min} أيام`;
+    } else {
+        el.textContent = `${max}-${min} أيام`;
+    }
+});
 
-        const ordersEl = document.querySelector(".orders-count");
-        if (ordersEl) ordersEl.textContent = data.orders.toLocaleString();
+const availValue = document.querySelector(".avail-value");
+if (availValue) {
+    availValue.textContent = data.inStock ? "متوفر الآن" : "نفذت الكمية";
+    availValue.style.color = data.inStock ? "#0984e3" : "#636e72";
+}
 
-        const ratingValueEl = document.getElementById("ratingValue");
-        if (ratingValueEl) ratingValueEl.textContent = data.score.toFixed(1);
+const ordersEl = document.querySelector(".orders-count");
+if (ordersEl) ordersEl.textContent = data.orders.toLocaleString();
 
-        const ratingCountEl = document.getElementById("goToReviews");
-        if (ratingCountEl) ratingCountEl.textContent = `${(data.reviews || 0).toLocaleString()} تقييمات`;
+const ratingValueEl = document.getElementById("ratingValue");
+if (ratingValueEl) ratingValueEl.textContent = data.score.toFixed(1);
 
-        UILayout.drawStars(document.getElementById("stars"), parseFloat(data.score) || 0);
+const ratingCountEl = document.getElementById("goToReviews");
+if (ratingCountEl) ratingCountEl.textContent = `${(data.reviews || 0).toLocaleString()} تقييمات`;
+
+UILayout.drawStars(document.getElementById("stars"), parseFloat(data.score) || 0);
     };
 })();
 
