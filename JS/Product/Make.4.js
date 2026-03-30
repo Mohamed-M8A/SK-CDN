@@ -319,7 +319,6 @@ window.renderBinaryChart = function(buffer) {
         const avg = +(prices.reduce((a, b) => a + b, 0) / prices.length).toFixed(2);
         const current = prices[prices.length - 1], prev = prices[prices.length - 2] || current;
 
-        // دالة السهم مع التأكد من إضافة ستايل إضافي لضمان الظهور
         const getArrow = (v, c) => v > c ? `<span class="stat-arrow arrow-up" style="display:inline-block !important; color:#ef4444 !important;">▲</span>` : v < c ? `<span class="stat-arrow arrow-down" style="display:inline-block !important; color:#10b981 !important;">▼</span>` : "";
 
         const statsHtml = `
