@@ -43,6 +43,7 @@ body{-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-se
 .dark-mode .buy-button:hover{background-color:#eab308}
 .dark-mode .add-to-cart{background-color:#f97316;color:#000!important}
 .dark-mode .add-to-cart:hover{background-color:#ea580c}
+.dark-mode .price-saving{background-color:#2a2618;color:#fbc02d;border-color:#fbc02d}
 .dark-mode .rating-value{color:#fafafa}
 .dark-mode .rating-count{color:#a1a1a1}
 .dark-mode .rating-count:hover{color:#60a5fa;text-decoration:underline}
