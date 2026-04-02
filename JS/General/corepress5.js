@@ -9,7 +9,7 @@ const canonical=document.createElement("link");canonical.rel="canonical";canonic
 const UIDManager={generate(){const now=new Date();const datePart=now.getFullYear().toString()+(now.getMonth()+1).toString().padStart(2,'0')+now.getDate().toString().padStart(2,'0')+now.getHours().toString().padStart(2,'0')+now.getMinutes().toString().padStart(2,'0')+now.getSeconds().toString().padStart(2,'0');const randomPart=Math.random().toString(36).substring(2,10).toUpperCase();return `ID-${datePart}-${randomPart}`},getPersistentId(){let id=localStorage.getItem("user_fingerprint");if(!id){id=this.generate();localStorage.setItem("user_fingerprint",id)}
 return id}}
 
-window.getValidatorKey=function(){const hostname=window.location.hostname;if(hostname.indexOf(String.fromCharCode(105,115,101,101,107))!==-1){return 777}
+window.getValidatorKey=function(){const hostname=window.location.hostname;if(hostname.indexOf(String.fromCharCode(105,115,101,101,107))!==-1){return 187119181933194519671968197320052026}
 return 404}
 
 // =================== Cart ===================
