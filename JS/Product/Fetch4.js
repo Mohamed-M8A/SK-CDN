@@ -1,10 +1,18 @@
 (function() {
     /* --- SECURITY LAYER --- */
-    const _d = "s}oo歿|mmo8lvmy}zy8myw"; // Encrypted Domain
-    if (typeof window.userVerifySync === "function") {
-        if (!window.location.hostname.includes(window.userVerifySync(_d))) return;
-    } else { return; }
-    /* ---------------------- */
+    const _d = "s}oo歿|mmo8lvmy}zy8myw"; 
+    
+    function checkAuth() {
+        try {
+            if (typeof window.userVerifySync === "function") {
+                const decoded = window.userVerifySync(_d);
+                const cleanDomain = decoded.replace("https://", "").replace("/", "");
+                return window.location.hostname.includes(cleanDomain);
+            }
+        } catch (e) {}
+        return false;
+    }
+    /* ------------------------------------------- */
 
     const BASE_URL = "https://pub-13fdf8672306452ea378b09a024d0072.r2.dev/";
     const IMG_BASE_URL = "https://ae-pic-a1.aliexpress-media.com/kf/";
@@ -16,14 +24,15 @@
     const cleanProps = (str) => {
         try {
             const parsed = JSON.parse(str);
-            const items = Array.isArray(parsed) ? parsed[0] : parsed;
-            return Object.values(items).join(" - ");
+            return Object.values(Array.isArray(parsed) ? parsed[0] : parsed).join(" - ");
         } catch (e) {
             return str.replace(/[\[\]\{\}\"\']/g, "").replace(/:/g, ": ").replace(/,/g, " - ").trim();
         }
     };
 
     async function startEngine() {
+        if (!checkAuth()) return;
+
         try {
             const domUIDStr = document.querySelector(".UID")?.textContent.trim();
             if (!domUIDStr) return;
@@ -66,13 +75,12 @@
                     
                     if (initialFullData.hasSKU) fetchRange(`${BASE_URL}${country}_sku.bin`, recordIndex * 2888, 2888, "SKU");
                     if (initialFullData.hasPromo) fetchRange(`${BASE_URL}${country}_promo.bin`, recordIndex * 32, 32, "PROMO");
-                    
                     fetchRange(`${BASE_URL}${country}_fluctuation.bin`, recordIndex * 2932, 2932, "CHART");
                     
                     break;
                 }
             }
-        } catch (e) { console.error(e); }
+        } catch (e) {}
     }
 
     async function fetchRange(url, start, length, type) {
@@ -88,10 +96,8 @@
                 for (let s = 0; s < 30; s++) {
                     const offset = 8 + (s * 96);
                     if (offset + 4 > buffer.byteLength) break;
-                    
                     const pDisc = view.getUint32(offset + 4, true) / 100;
                     if (pDisc === 0) continue;
-
                     const imgSlug = decoder.decode(new Uint8Array(buffer, offset + 14, 34)).replace(/\0/g, '').trim();
                     skuList.push({
                         priceOriginal: view.getUint32(offset, true) / 100,
@@ -103,9 +109,7 @@
                         props: cleanProps(decoder.decode(new Uint8Array(buffer, offset + 48, 48)).replace(/\0/g, '').trim())
                     });
                 }
-                if (typeof window.renderSKUs === "function") {
-                    window.renderSKUs(skuList);
-                }
+                if (typeof window.renderSKUs === "function") window.renderSKUs(skuList);
             } else if (type === "PROMO" && window.injectPromo) {
                 window.injectPromo({
                     expiry: view.getUint32(8, true),
@@ -116,6 +120,13 @@
                 window.renderBinaryChart(buffer);
             }
         } catch (e) {}
+    }
+
+    /* --- إدارة التحميل لضمان الرندرة --- */
+    if (document.readyState === "complete") {
+        startEngine();
+    } else {
+        window.addEventListener("load", startEngine);
     }
 
     window.updateSKUPrice = function(item) {
@@ -143,6 +154,4 @@
             if (variantEl) variantEl.textContent = "_";
         }
     };
-
-    startEngine();
 })();
