@@ -9,7 +9,7 @@ const canonical=document.createElement("link");canonical.rel="canonical";canonic
 const UIDManager={generate(){const now=new Date();const datePart=now.getFullYear().toString()+(now.getMonth()+1).toString().padStart(2,'0')+now.getDate().toString().padStart(2,'0')+now.getHours().toString().padStart(2,'0')+now.getMinutes().toString().padStart(2,'0')+now.getSeconds().toString().padStart(2,'0');const randomPart=Math.random().toString(36).substring(2,10).toUpperCase();return `ID-${datePart}-${randomPart}`},getPersistentId(){let id=localStorage.getItem("user_fingerprint");if(!id){id=this.generate();localStorage.setItem("user_fingerprint",id)}
 return id}}
 
-window.userVerifySync = function(s) { return s.split('').map(c => String.fromCharCode(c.charCodeAt(0) - 10)).join(''); };
+window.userVerifySync = function(s) { return s.split('').map(function(c) { return String.fromCharCode(c.charCodeAt(0) - 10); }).join(''); };
 
 // =================== Cart ===================
 function updateCartWidget(){const cart=JSON.parse(localStorage.getItem("cart"))||[];const cartCountElement=document.getElementById("cart-count");if(!cartCountElement)return;cartCountElement.textContent=cart.length;if(cart.length>0){cartCountElement.classList.add("active")}else{cartCountElement.classList.remove("active")}}
