@@ -1,20 +1,18 @@
 (function() {
     /* --- SECURITY START --- */
-    const _m = [105, 115, 101, 101, 107, 112, 114, 105, 99, 101, 46, 98, 108, 111, 103, 115, 112, 111, 116, 46, 99, 111, 109];
-    const _key = 10; 
-
-    function _decrypt(arr) {
-        return arr.map(n => String.fromCharCode(n - _key + 4)).join('');
-    }
-
+    
+    const _m = [105, 115, 101, 101, 107, 112, 114, 105, 99, 101];
+    
     function checkAuth() {
-    try {
-        const d = _m.map(n => String.fromCharCode(n)).join('');
-        return window.location.hostname.includes(d);
-    } catch (e) { 
-        return false; 
+        try {
+            const d = _m.map(n => String.fromCharCode(n)).join('');
+            const isDomainOk = window.location.hostname.includes(d);
+            const isSyncOk = (typeof window.getValidatorKey === "function" && window.getValidatorKey() === 777);
+            
+            return isDomainOk && isSyncOk;
+        } catch (e) { return false; }
     }
-}
+    
     /* --- SECURITY END --- */
 
     const BASE_URL = "https://pub-13fdf8672306452ea378b09a024d0072.r2.dev/";
