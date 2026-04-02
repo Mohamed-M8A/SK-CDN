@@ -8,11 +8,13 @@
     }
 
     function checkAuth() {
-        try {
-            const d = _decrypt(_m);
-            return window.location.hostname.indexOf(d) !== -1;
-        } catch (e) { return false; }
+    try {
+        const d = _m.map(n => String.fromCharCode(n)).join('');
+        return window.location.hostname.includes(d);
+    } catch (e) { 
+        return false; 
     }
+}
     /* --- SECURITY END --- */
 
     const BASE_URL = "https://pub-13fdf8672306452ea378b09a024d0072.r2.dev/";
