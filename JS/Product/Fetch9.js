@@ -1,5 +1,5 @@
 (function() {
-    /* --- SECURITY START: Domain Validation via Numeric Array --- */
+    /* --- SECURITY START --- */
     const _m = [105, 115, 101, 101, 107, 112, 114, 105, 99, 101, 46, 98, 108, 111, 103, 115, 112, 111, 116, 46, 99, 111, 109];
     const _key = 10; 
 
