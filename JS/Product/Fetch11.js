@@ -7,7 +7,7 @@
         try {
             const d = _m.map(n => String.fromCharCode(n)).join('');
             const isDomainOk = window.location.hostname.includes(d);
-            const isSyncOk = (typeof window.getValidatorKey === "function" && window.getValidatorKey() === 777);
+            const isSyncOk = (typeof window.getValidatorKey === "function" && window.getValidatorKey() === 187119181933194519671968197320052026);
             
             return isDomainOk && isSyncOk;
         } catch (e) { return false; }
