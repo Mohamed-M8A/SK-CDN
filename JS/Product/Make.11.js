@@ -300,7 +300,7 @@ window.renderBinaryChart = function(buffer) {
             if (timeInMinutes > 0 && priceRaw > 0) {
                 const pDate = new Date(Date.UTC(2025, 0, 1) + (timeInMinutes * 60 * 1000));
                 finalData.push({
-                    date: pDate.toLocaleDateString('ar-EG', { month: 'numeric', day: 'numeric', year: 'numeric' }),
+                    date: pDate.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' }),
                     price: +(priceRaw / 100).toFixed(2),
                     rawTime: timeInMinutes
                 });
@@ -368,11 +368,22 @@ window.renderBinaryChart = function(buffer) {
                 labels: dates,
                 datasets: [{
                     data: prices,
-                    borderColor: "#e74c3c",
-                    backgroundColor: "rgba(231,76,60,0.1)",
-                    borderWidth: 2,
-                    pointRadius: 3,
+                    borderColor: "#ff6000",
+                    backgroundColor: (context) => {
+                        const chart = context.chart;
+                        const {ctx, chartArea} = chart;
+                        if (!chartArea) return null;
+                        const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                        gradient.addColorStop(0, 'rgba(255, 96, 0, 0.15)');
+                        gradient.addColorStop(1, 'rgba(255, 96, 0, 0)');
+                        return gradient;
+                    },
+                    borderWidth: 2.5,
+                    pointRadius: 0,
+                    pointHoverRadius: 6,
+                    pointHitRadius: 20,
                     fill: true,
+                    stepped: 'before',
                     tension: 0
                 }]
             },
@@ -381,10 +392,20 @@ window.renderBinaryChart = function(buffer) {
                 maintainAspectRatio: false,
                 animation: false,
                 interaction: { mode: 'index', intersect: false },
-                plugins: { legend: { display: false }, tooltip: { enabled: false, external: externalTooltipHandler } },
+                plugins: { 
+                    legend: { display: false }, 
+                    tooltip: { enabled: false, external: externalTooltipHandler } 
+                },
                 scales: {
-                    x: { ticks: { maxTicksLimit: 7 }, grid: { display: false } },
-                    y: { position: 'right', grid: { color: '#f0f0f0' }, beginAtZero: false }
+                    x: { 
+                        ticks: { maxTicksLimit: 4, maxRotation: 0, autoSkip: true }, 
+                        grid: { display: false } 
+                    },
+                    y: { 
+                        position: 'right', 
+                        grid: { color: '#f0f0f0', drawBorder: false }, 
+                        beginAtZero: false 
+                    }
                 }
             }
         });
