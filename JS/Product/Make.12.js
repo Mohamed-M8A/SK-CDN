@@ -293,10 +293,8 @@ window.renderBinaryChart = function(buffer) {
         for (let i = 0; i < priceCount; i++) {
             const offset = 12 + (i * 8);
             if (offset + 8 > buffer.byteLength) break;
-
             const timeInMinutes = view.getUint32(offset, true);
             const priceRaw = view.getInt32(offset + 4, true);
-
             if (timeInMinutes > 0 && priceRaw > 0) {
                 const pDate = new Date(Date.UTC(2025, 0, 1) + (timeInMinutes * 60 * 1000));
                 finalData.push({
@@ -313,29 +311,59 @@ window.renderBinaryChart = function(buffer) {
         const chartCanvas = document.getElementById("priceChart");
         if (!finalData.length || !chartCanvas || !tab4) return;
 
+        if (!chartCanvas.parentNode.id.includes("scroll-wrapper")) {
+            const scrollContainer = document.createElement("div");
+            scrollContainer.id = "chart-scroll-wrapper";
+            scrollContainer.style.cssText = "width:100%; overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; scroll-behavior:smooth;";
+            
+            const innerWrapper = document.createElement("div");
+            innerWrapper.id = "chart-inner-resizer";
+            innerWrapper.style.height = "300px";
+            innerWrapper.style.position = "relative";
+            
+            chartCanvas.parentNode.insertBefore(scrollContainer, chartCanvas);
+            innerWrapper.appendChild(chartCanvas);
+            scrollContainer.appendChild(innerWrapper);
+            
+            const style = document.createElement('style');
+            style.innerHTML = `
+                #chart-scroll-wrapper::-webkit-scrollbar {height: 4px;}
+                #chart-scroll-wrapper::-webkit-scrollbar-track {background: #f1f1f1;}
+                #chart-scroll-wrapper::-webkit-scrollbar-thumb {background: #ccc; border-radius: 10px;}
+                #chart-scroll-wrapper::-webkit-scrollbar-thumb:hover {background: #ff6000;}
+            `;
+            document.head.appendChild(style);
+        }
+
+        const resizer = document.getElementById("chart-inner-resizer");
+        const scrollContainer = document.getElementById("chart-scroll-wrapper");
+        
+        const dynamicWidth = Math.max(scrollContainer.offsetWidth, finalData.length * 12);
+        resizer.style.width = dynamicWidth + "px";
+
         const prices = finalData.map(x => x.price);
         const dates = finalData.map(x => x.date);
         const min = Math.min(...prices), max = Math.max(...prices);
         const avg = +(prices.reduce((a, b) => a + b, 0) / prices.length).toFixed(2);
         const current = prices[prices.length - 1], prev = prices[prices.length - 2] || current;
 
-        const getArrow = (v, c) => v > c ? `<span class="stat-arrow arrow-up" style="display:inline-block !important; color:#ef4444 !important;">▲</span>` : v < c ? `<span class="stat-arrow arrow-down" style="display:inline-block !important; color:#10b981 !important;">▼</span>` : "";
+        const getArrow = (v, c) => v > c ? `<span style="color:#ef4444 !important;">▲</span>` : v < c ? `<span style="color:#10b981 !important;">▼</span>` : "";
 
         const statsHtml = `
             <div class="price-stats">
                 <div class="stat-item current">
                     <strong>السعر الحالي</strong>
-                    <span style="display:flex; align-items:center; gap:5px;">${current} ${currency} ${getArrow(current, prev)}</span>
-                    <small style="font-size:11px;color:#666;margin-top:2px;">(${(current - prev).toFixed(2)} ${currency})</small>
+                    <span>${current} ${currency} ${getArrow(current, prev)}</span>
+                    <small style="font-size:11px;color:#666;">(${(current - prev).toFixed(2)} ${currency})</small>
                 </div>
-                <div class="stat-item"><strong>المتوسط</strong><span>${avg} ${currency}</span></div>
-                <div class="stat-item"><strong>أقل سعر</strong><span>${min} ${currency}</span></div>
-                <div class="stat-item"><strong>أعلى سعر</strong><span>${max} ${currency}</span></div>
+                <div class="stat-item"><strong>المتوسط</strong><span>${avg}</span></div>
+                <div class="stat-item"><strong>أقل</strong><span>${min}</span></div>
+                <div class="stat-item"><strong>أعلى</strong><span>${max}</span></div>
             </div>`;
 
         const oldStats = tab4.querySelector(".price-stats");
         if (oldStats) oldStats.remove();
-        chartCanvas.insertAdjacentHTML("afterend", statsHtml);
+        scrollContainer.insertAdjacentHTML("afterend", statsHtml);
 
         let tooltipEl = document.getElementById("chart-tooltip") || Object.assign(document.createElement("div"), {id: "chart-tooltip"});
         if (!tooltipEl.parentElement) document.body.appendChild(tooltipEl);
@@ -343,24 +371,17 @@ window.renderBinaryChart = function(buffer) {
         const externalTooltipHandler = (context) => {
             const { chart, tooltip } = context;
             if (tooltip.opacity === 0) { tooltipEl.style.opacity = 0; tooltipEl.style.display = "none"; return; }
-            tooltipEl.style.display = "block";
-            tooltipEl.style.opacity = 1;
+            tooltipEl.style.display = "block"; tooltipEl.style.opacity = 1;
             const idx = tooltip.dataPoints[0].dataIndex;
             const val = tooltip.dataPoints[0].raw;
-            const pVal = idx > 0 ? prices[idx - 1] : val;
-            const diff = +(val - pVal).toFixed(2);
-            const perc = pVal !== 0 ? ((diff / pVal) * 100).toFixed(1) : 0;
-            const arr = diff > 0 ? `<span class="stat-arrow arrow-up" style="color:#ef4444 !important;">▲</span>` : diff < 0 ? `<span class="stat-arrow arrow-down" style="color:#10b981 !important;">▼</span>` : `<span class="stat-arrow">-</span>`;
-            tooltipEl.innerHTML = `<div class="tooltip-line" style="font-weight:bold;">${dates[idx]}</div><div class="tooltip-line">السعر: ${val} ${currency}</div><div class="tooltip-line">التغير: ${arr} ${diff} ${currency}</div><div class="tooltip-line">النسبة: ${perc}%</div>`;
+            tooltipEl.innerHTML = `<div style="font-weight:bold;">${dates[idx]}</div><div>السعر: ${val} ${currency}</div>`;
             const pos = chart.canvas.getBoundingClientRect();
-            const pX = pos.left + window.pageXOffset + tooltip.caretX;
-            tooltipEl.style.left = (pX > window.innerWidth * 0.7) ? (pX - 180) + 'px' : (pX + 10) + 'px';
-            tooltipEl.style.top = pos.top + window.pageYOffset + tooltip.caretY - 40 + 'px';
+            tooltipEl.style.left = (pos.left + window.pageXOffset + tooltip.caretX) + 'px';
+            tooltipEl.style.top = (pos.top + window.pageYOffset + tooltip.caretY - 40) + 'px';
         };
 
         const ctx = chartCanvas.getContext("2d");
         if (window.myPriceChart) window.myPriceChart.destroy();
-        chartCanvas.parentElement.style.height = "300px";
 
         window.myPriceChart = new Chart(ctx, {
             type: "line",
@@ -369,22 +390,20 @@ window.renderBinaryChart = function(buffer) {
                 datasets: [{
                     data: prices,
                     borderColor: "#ff6000",
-                    backgroundColor: (context) => {
-                        const chart = context.chart;
-                        const {ctx, chartArea} = chart;
-                        if (!chartArea) return null;
-                        const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-                        gradient.addColorStop(0, 'rgba(255, 96, 0, 0.15)');
-                        gradient.addColorStop(1, 'rgba(255, 96, 0, 0)');
-                        return gradient;
+                    backgroundColor: (c) => {
+                        const a = c.chart.chartArea;
+                        if (!a) return null;
+                        const g = c.chart.ctx.createLinearGradient(0, a.top, 0, a.bottom);
+                        g.addColorStop(0, 'rgba(255, 96, 0, 0.15)');
+                        g.addColorStop(1, 'rgba(255, 96, 0, 0)');
+                        return g;
                     },
                     borderWidth: 2.5,
                     pointRadius: 0,
                     pointHoverRadius: 6,
                     pointHitRadius: 20,
                     fill: true,
-                    stepped: 'before',
-                    tension: 0
+                    stepped: 'before'
                 }]
             },
             options: {
@@ -392,24 +411,17 @@ window.renderBinaryChart = function(buffer) {
                 maintainAspectRatio: false,
                 animation: false,
                 interaction: { mode: 'index', intersect: false },
-                plugins: { 
-                    legend: { display: false }, 
-                    tooltip: { enabled: false, external: externalTooltipHandler } 
-                },
+                plugins: { legend: { display: false }, tooltip: { enabled: false, external: externalTooltipHandler } },
                 scales: {
-                    x: { 
-                        ticks: { maxTicksLimit: 4, maxRotation: 0, autoSkip: true }, 
-                        grid: { display: false } 
-                    },
-                    y: { 
-                        position: 'right', 
-                        grid: { color: '#f0f0f0', drawBorder: false }, 
-                        beginAtZero: false 
-                    }
+                    x: { ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: Math.floor(dynamicWidth/100) }, grid: { display: false } },
+                    y: { position: 'right', grid: { color: '#f0f0f0' }, beginAtZero: false }
                 }
             }
         });
-    } catch (e) {}
+
+        scrollContainer.scrollLeft = scrollContainer.scrollWidth;
+
+    } catch (e) { console.error(e); }
 };
 
 // =================== Download Chart ===================
