@@ -314,7 +314,7 @@ window.renderBinaryChart = function(buffer) {
         if (!chartCanvas.parentNode.id.includes("scroll-wrapper")) {
             const scrollContainer = document.createElement("div");
             scrollContainer.id = "chart-scroll-wrapper";
-            scrollContainer.style.cssText = "width:100%; overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; scroll-behavior:smooth;";
+            scrollContainer.style.cssText = "width:100%; overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch;";
             
             const innerWrapper = document.createElement("div");
             innerWrapper.id = "chart-inner-resizer";
@@ -328,9 +328,8 @@ window.renderBinaryChart = function(buffer) {
             const style = document.createElement('style');
             style.innerHTML = `
                 #chart-scroll-wrapper::-webkit-scrollbar {height: 4px;}
-                #chart-scroll-wrapper::-webkit-scrollbar-track {background: #f1f1f1;}
                 #chart-scroll-wrapper::-webkit-scrollbar-thumb {background: #ccc; border-radius: 10px;}
-                #chart-scroll-wrapper::-webkit-scrollbar-thumb:hover {background: #ff6000;}
+                @media (min-width: 992px) { #chart-inner-resizer { width: 100% !important; } }
             `;
             document.head.appendChild(style);
         }
@@ -338,8 +337,8 @@ window.renderBinaryChart = function(buffer) {
         const resizer = document.getElementById("chart-inner-resizer");
         const scrollContainer = document.getElementById("chart-scroll-wrapper");
         
-        const dynamicWidth = Math.max(scrollContainer.offsetWidth, finalData.length * 12);
-        resizer.style.width = dynamicWidth + "px";
+        const isMobile = window.innerWidth < 768;
+        resizer.style.width = isMobile ? Math.max(scrollContainer.offsetWidth, finalData.length * 15) + "px" : "100%";
 
         const prices = finalData.map(x => x.price);
         const dates = finalData.map(x => x.date);
@@ -347,18 +346,19 @@ window.renderBinaryChart = function(buffer) {
         const avg = +(prices.reduce((a, b) => a + b, 0) / prices.length).toFixed(2);
         const current = prices[prices.length - 1], prev = prices[prices.length - 2] || current;
 
-        const getArrow = (v, c) => v > c ? `<span style="color:#ef4444 !important;">▲</span>` : v < c ? `<span style="color:#10b981 !important;">▼</span>` : "";
+        const getArrow = (v, c) => v > c ? `<span style="color:#ef4444;">▲</span>` : v < c ? `<span style="color:#10b981;">▼</span>` : "";
 
+        const diffTotal = (current - prev).toFixed(2);
         const statsHtml = `
             <div class="price-stats">
                 <div class="stat-item current">
                     <strong>السعر الحالي</strong>
-                    <span>${current} ${currency} ${getArrow(current, prev)}</span>
-                    <small style="font-size:11px;color:#666;">(${(current - prev).toFixed(2)} ${currency})</small>
+                    <span style="display:flex; align-items:center; gap:5px;">${current} ${currency} ${getArrow(current, prev)}</span>
+                    <small style="font-size:11px;color:#666;">(${diffTotal} ${currency})</small>
                 </div>
-                <div class="stat-item"><strong>المتوسط</strong><span>${avg}</span></div>
-                <div class="stat-item"><strong>أقل</strong><span>${min}</span></div>
-                <div class="stat-item"><strong>أعلى</strong><span>${max}</span></div>
+                <div class="stat-item"><strong>المتوسط</strong><span>${avg} ${currency}</span></div>
+                <div class="stat-item"><strong>أقل سعر</strong><span>${min} ${currency}</span></div>
+                <div class="stat-item"><strong>أعلى سعر</strong><span>${max} ${currency}</span></div>
             </div>`;
 
         const oldStats = tab4.querySelector(".price-stats");
@@ -372,12 +372,22 @@ window.renderBinaryChart = function(buffer) {
             const { chart, tooltip } = context;
             if (tooltip.opacity === 0) { tooltipEl.style.opacity = 0; tooltipEl.style.display = "none"; return; }
             tooltipEl.style.display = "block"; tooltipEl.style.opacity = 1;
+            
             const idx = tooltip.dataPoints[0].dataIndex;
             const val = tooltip.dataPoints[0].raw;
-            tooltipEl.innerHTML = `<div style="font-weight:bold;">${dates[idx]}</div><div>السعر: ${val} ${currency}</div>`;
+            const pVal = idx > 0 ? prices[idx - 1] : val;
+            const diff = +(val - pVal).toFixed(2);
+            const perc = pVal !== 0 ? ((diff / pVal) * 100).toFixed(1) : 0;
+            const arr = diff > 0 ? `<span style="color:#ef4444;">▲</span>` : diff < 0 ? `<span style="color:#10b981;">▼</span>` : "-";
+            
+            tooltipEl.innerHTML = `
+                <div style="font-weight:bold;margin-bottom:4px;">${dates[idx]}</div>
+                <div>السعر: ${val} ${currency}</div>
+                <div style="font-size:12px;">التغير: ${arr} ${diff} (${perc}%)</div>
+            `;
             const pos = chart.canvas.getBoundingClientRect();
-            tooltipEl.style.left = (pos.left + window.pageXOffset + tooltip.caretX) + 'px';
-            tooltipEl.style.top = (pos.top + window.pageYOffset + tooltip.caretY - 40) + 'px';
+            tooltipEl.style.left = (pos.left + window.pageXOffset + tooltip.caretX + 10) + 'px';
+            tooltipEl.style.top = (pos.top + window.pageYOffset + tooltip.caretY - 50) + 'px';
         };
 
         const ctx = chartCanvas.getContext("2d");
@@ -391,35 +401,26 @@ window.renderBinaryChart = function(buffer) {
                     data: prices,
                     borderColor: "#ff6000",
                     backgroundColor: (c) => {
-                        const a = c.chart.chartArea;
-                        if (!a) return null;
+                        const a = c.chart.chartArea; if (!a) return null;
                         const g = c.chart.ctx.createLinearGradient(0, a.top, 0, a.bottom);
-                        g.addColorStop(0, 'rgba(255, 96, 0, 0.15)');
-                        g.addColorStop(1, 'rgba(255, 96, 0, 0)');
+                        g.addColorStop(0, 'rgba(255, 96, 0, 0.15)'); g.addColorStop(1, 'rgba(255, 96, 0, 0)');
                         return g;
                     },
-                    borderWidth: 2.5,
-                    pointRadius: 0,
-                    pointHoverRadius: 6,
-                    pointHitRadius: 20,
-                    fill: true,
-                    stepped: 'before'
+                    borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 6, pointHitRadius: 20, fill: true, stepped: 'before'
                 }]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: false,
+                responsive: true, maintainAspectRatio: false, animation: false,
                 interaction: { mode: 'index', intersect: false },
                 plugins: { legend: { display: false }, tooltip: { enabled: false, external: externalTooltipHandler } },
                 scales: {
-                    x: { ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: Math.floor(dynamicWidth/100) }, grid: { display: false } },
-                    y: { position: 'right', grid: { color: '#f0f0f0' }, beginAtZero: false }
+                    x: { ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: isMobile ? 5 : 10 }, grid: { display: false } },
+                    y: { position: 'right', grid: { color: '#f0f0f0', drawBorder: false } }
                 }
             }
         });
 
-        scrollContainer.scrollLeft = scrollContainer.scrollWidth;
+        if (isMobile) scrollContainer.scrollLeft = scrollContainer.scrollWidth;
 
     } catch (e) { console.error(e); }
 };
