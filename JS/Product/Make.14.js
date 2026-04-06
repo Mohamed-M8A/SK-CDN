@@ -330,6 +330,19 @@ window.renderBinaryChart = function(buffer) {
                 #chart-scroll-wrapper::-webkit-scrollbar {height: 4px;}
                 #chart-scroll-wrapper::-webkit-scrollbar-thumb {background: #ccc; border-radius: 10px;}
                 @media (min-width: 992px) { #chart-inner-resizer { width: 100% !important; } }
+                #chart-tooltip {
+                    position: absolute;
+                    background: rgba(0, 0, 0, 0.85);
+                    color: #fff;
+                    padding: 10px;
+                    border-radius: 6px;
+                    pointer-events: none;
+                    z-index: 9999;
+                    font-size: 13px;
+                    white-space: nowrap;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    transition: opacity 0.15s ease;
+                }
             `;
             document.head.appendChild(style);
         }
@@ -371,7 +384,9 @@ window.renderBinaryChart = function(buffer) {
         const externalTooltipHandler = (context) => {
             const { chart, tooltip } = context;
             if (tooltip.opacity === 0) { tooltipEl.style.opacity = 0; tooltipEl.style.display = "none"; return; }
-            tooltipEl.style.display = "block"; tooltipEl.style.opacity = 1;
+            
+            tooltipEl.style.display = "block"; 
+            tooltipEl.style.opacity = 1;
             
             const idx = tooltip.dataPoints[0].dataIndex;
             const val = tooltip.dataPoints[0].raw;
@@ -381,13 +396,23 @@ window.renderBinaryChart = function(buffer) {
             const arr = diff > 0 ? `<span style="color:#ef4444;">▲</span>` : diff < 0 ? `<span style="color:#10b981;">▼</span>` : "-";
             
             tooltipEl.innerHTML = `
-                <div style="font-weight:bold;margin-bottom:4px;">${dates[idx]}</div>
+                <div style="font-weight:bold;margin-bottom:4px;border-bottom:1px solid #555;padding-bottom:4px;">${dates[idx]}</div>
                 <div>السعر: ${val} ${currency}</div>
                 <div style="font-size:12px;">التغير: ${arr} ${diff} (${perc}%)</div>
             `;
+
             const pos = chart.canvas.getBoundingClientRect();
-            tooltipEl.style.left = (pos.left + window.pageXOffset + tooltip.caretX + 10) + 'px';
-            tooltipEl.style.top = (pos.top + window.pageYOffset + tooltip.caretY - 50) + 'px';
+            const tooltipWidth = tooltipEl.offsetWidth;
+            const screenWidth = window.innerWidth;
+            
+            let leftPos = pos.left + window.pageXOffset + tooltip.caretX + 10;
+            if (leftPos + tooltipWidth > screenWidth) {
+                leftPos = pos.left + window.pageXOffset + tooltip.caretX - tooltipWidth - 10;
+            }
+            if (leftPos < 0) leftPos = 10;
+
+            tooltipEl.style.left = leftPos + 'px';
+            tooltipEl.style.top = (pos.top + window.pageYOffset + tooltip.caretY - 60) + 'px';
         };
 
         const ctx = chartCanvas.getContext("2d");
