@@ -34,6 +34,8 @@
                     const flags = view.getUint8(i + 31);
                     const recordIndex = i / stride;
                     
+                    window.currentRecordIndex = recordIndex;
+
                     initialOrders = view.getUint16(i + 24, true);
                     initialReviews = view.getUint16(i + 26, true);
                     initialScore = view.getUint8(i + 28) / 10;
@@ -87,6 +89,7 @@
 
                     const imgSlug = decoder.decode(new Uint8Array(buffer, offset + 14, 34)).replace(/\0/g, '').trim();
                     skuList.push({
+                        skuIdx: s, 
                         priceOriginal: view.getUint32(offset, true) / 100,
                         priceDiscounted: pDisc,
                         shippingFee: view.getUint32(offset + 8, true) / 100,
@@ -112,6 +115,8 @@
     }
 
     window.updateSKUPrice = function(item) {
+        window.selectedSkuIndex = item.skuIdx;
+
         if (typeof window.injectData === "function") {
             window.injectData({
                 priceOriginal: item.priceOriginal,
@@ -130,6 +135,8 @@
     };
 
     window.resetToInitialData = function() {
+        window.selectedSkuIndex = 255; 
+
         if (initialFullData && typeof window.injectData === "function") {
             window.injectData(initialFullData);
             const variantEl = document.querySelector(".variant-value");
