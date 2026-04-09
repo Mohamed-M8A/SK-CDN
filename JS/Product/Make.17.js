@@ -490,11 +490,11 @@ window.renderBinaryChart = function(buffer) {
         ctx.direction = "rtl";
         ctx.textAlign = "right";
         
-        ctx.fillStyle = "#e74c3c";
+        ctx.fillStyle = "#ff1e00";
         ctx.font = "bold 26px Arial";
         ctx.fillText("بـورصـة الأسـعـار", tempCanvas.width - padding, 45);
 
-        ctx.fillStyle = isDarkMode ? "#eeeeee" : "#2c3e50";
+        ctx.fillStyle = isDarkMode ? "#eeeeee" : "#ff6000";
         ctx.font = "bold 19px Arial";
         const cleanName = productName.length > 55 ? productName.substring(0, 55) + "..." : productName;
         ctx.fillText(cleanName, tempCanvas.width - padding, 80);
