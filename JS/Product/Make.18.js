@@ -490,11 +490,11 @@ window.renderBinaryChart = function(buffer) {
         ctx.direction = "rtl";
         ctx.textAlign = "right";
         
-        ctx.fillStyle = "#ff1e00";
+        ctx.fillStyle = "#e74c3c";
         ctx.font = "bold 26px Arial";
         ctx.fillText("بـورصـة الأسـعـار", tempCanvas.width - padding, 45);
 
-        ctx.fillStyle = isDarkMode ? "#eeeeee" : "#ff6000";
+        ctx.fillStyle = isDarkMode ? "#eeeeee" : "#2c3e50";
         ctx.font = "bold 19px Arial";
         const cleanName = productName.length > 55 ? productName.substring(0, 55) + "..." : productName;
         ctx.fillText(cleanName, tempCanvas.width - padding, 80);
@@ -533,14 +533,14 @@ window.renderBinaryChart = function(buffer) {
             const btnHtml = `
                 <div style="text-align: center; margin: 25px 0;">
                     <button id="btn-download-chart" onclick="downloadChartAsImage()" 
-                        style="padding: 12px 26px; background: #2c3e50; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; transition: 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                        style="padding: 12px 26px; background: #ff6000; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; transition: 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
                         حفظ الرسم البياني 
                     </button>
                 </div>`;
             stats.insertAdjacentHTML("afterend", btnHtml);
             const btn = document.getElementById("btn-download-chart");
-            btn.onmouseover = () => { btn.style.background = "#e74c3c"; };
-            btn.onmouseout = () => { btn.style.background = "#2c3e50"; };
+            btn.onmouseover = () => { btn.style.background = "#ff1e00"; };
+            btn.onmouseout = () => { btn.style.background = "#ff6e17"; };
         }
     });
 
