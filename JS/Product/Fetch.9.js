@@ -1,5 +1,5 @@
 (function() {
-    const BASE_URL = "https://pub-13fdf8672306452ea378b09a024d0072.r2.dev/";
+    const BASE_URL = "https://api.iseekprice.com/";
     const IMG_BASE_URL = "https://ae-pic-a1.aliexpress-media.com/kf/";
     const country = (localStorage.getItem("Cntry") || "SA").toUpperCase();
     
