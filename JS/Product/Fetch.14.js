@@ -1,10 +1,7 @@
 (function() {
-    const BASE_URL = "https://api.iseekprice.com/";
     const IMG_BASE_URL = "https://ae-pic-a1.aliexpress-media.com/kf/";
-    const country = (localStorage.getItem("Cntry") || "SA").toUpperCase();
     
     let initialFullData = null;
-    let fileMap = {};
 
     const cleanProps = (str) => {
         try {
@@ -18,80 +15,39 @@
 
     async function startEngine() {
         try {
-            const mapRes = await fetch(`${BASE_URL}map.bin?v=${Date.now()}`);
-            if (!mapRes.ok) return;
-            const mapText = await mapRes.text();
-            const hashes = mapText.trim().split('\n').map(h => h.trim());
-
-            const regions = ["SA", "AE", "OM", "MA", "DZ", "TN"];
-            const currentRegionIndex = regions.indexOf(country);
-
-            if (currentRegionIndex !== -1) {
-                const startIdx = 2 + (currentRegionIndex * 5);
-                fileMap = {
-                    feed: `${country}_feed_${hashes[startIdx]}.bin`,
-                    promo: `${country}_promo_${hashes[startIdx + 1]}.bin`,
-                    sku: `${country}_sku_${hashes[startIdx + 2]}.bin`,
-                    chart: `${country}_fluctuation_${hashes[startIdx + 3]}.bin`,
-                    links: `${country}_links_${hashes[startIdx + 4]}.bin`
-                };
-            } else {
-                return;
-            }
-
             const domUIDStr = document.querySelector(".UID")?.textContent.trim();
-            if (!domUIDStr) return;
-            const targetUID = BigInt(domUIDStr);
+            if (!domUIDStr || !window.MapEngine) return;
 
-            const res = await fetch(`${BASE_URL}${fileMap.feed}`);
-            if (!res.ok) return;
+            const result = await window.MapEngine.getFeed(domUIDStr);
+            if (!result) return;
 
-            const buffer = await res.arrayBuffer();
-            const view = new DataView(buffer);
-            const stride = 32;
+            const { config, recordIndex, data } = result;
+            initialFullData = { ...data, productAffCode: "", storeAffCode: "", storeName: "" };
 
-            for (let i = 0; i < buffer.byteLength; i += stride) {
-                if (view.getBigUint64(i, true) === targetUID) {
-                    const flags = view.getUint8(i + 31);
-                    const recordIndex = i / stride;
-                    window.currentRecordIndex = recordIndex;
+            if (typeof window.injectData === "function") window.injectData(initialFullData);
+            
+            const sizes = window.MapEngine.RECORD_SIZES;
 
-                    initialFullData = {
-                        storeId: view.getUint32(i + 8, true),
-                        priceOriginal: view.getUint32(i + 12, true) / 100,
-                        priceDiscounted: view.getUint32(i + 16, true) / 100,
-                        shippingFee: view.getUint32(i + 20, true) / 100,
-                        orders: view.getUint16(i + 24, true),
-                        reviews: view.getUint16(i + 26, true),
-                        score: view.getUint8(i + 28) / 10,
-                        minDelivery: view.getUint8(i + 29),
-                        maxDelivery: view.getUint8(i + 30),
-                        inStock: (flags & 0x20) !== 0,
-                        hasSKU: (flags & 0x40) !== 0,
-                        hasPromo: (flags & 0x80) !== 0,
-                        productAffCode: "",
-                        storeAffCode: "",
-                        storeName: ""
-                    };
-
-                    if (typeof window.injectData === "function") window.injectData(initialFullData);
-                    
-                    fetchRange(`${BASE_URL}${fileMap.links}`, recordIndex * 100, 100, "LINKS");
-                    if (initialFullData.hasSKU) fetchRange(`${BASE_URL}${fileMap.sku}`, recordIndex * 2888, 2888, "SKU");
-                    if (initialFullData.hasPromo) fetchRange(`${BASE_URL}${fileMap.promo}`, recordIndex * 32, 32, "PROMO");
-                    fetchRange(`${BASE_URL}${fileMap.chart}`, recordIndex * 2932, 2932, "CHART");
-                    
-                    break;
-                }
+            fetchRange(`${window.MapEngine.baseUrl}${config.links}`, recordIndex * sizes.LINKS, sizes.LINKS, "LINKS");
+            
+            if (initialFullData.hasSKU) {
+                fetchRange(`${window.MapEngine.baseUrl}${config.sku}`, recordIndex * sizes.SKU, sizes.SKU, "SKU");
             }
+            
+            if (initialFullData.hasPromo) {
+                fetchRange(`${window.MapEngine.baseUrl}${config.promo}`, recordIndex * sizes.PROMO, sizes.PROMO, "PROMO");
+            }
+            
+            fetchRange(`${window.MapEngine.baseUrl}${config.chart}`, recordIndex * sizes.CHART, sizes.CHART, "CHART");
+
         } catch (e) { console.error(e); }
     }
 
     async function fetchRange(url, start, length, type) {
         try {
-            const res = await fetch(url, { headers: { 'Range': `bytes=${start}-${start + length - 1}` } });
-            if (res.status !== 206) return;
-            const buffer = await res.arrayBuffer();
+            const buffer = await window.MapEngine.getRange(url, start, length);
+            if (!buffer) return;
+
             const view = new DataView(buffer);
             const decoder = new TextDecoder("utf-8");
 
