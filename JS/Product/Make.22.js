@@ -223,52 +223,10 @@
 
 // =================== Promo ===================
 
-window.injectPromo = function(promoData) {
-    let container = document.querySelector('.coupon-container');
-    const shelf = document.getElementById('dynamic-shelf');
-
-    if (!promoData || !promoData.code || !promoData.code.trim()) {
-        if (container) container.style.display = 'none';
-        return;
-    }
-
-    if (!container && shelf) {
-        container = document.createElement('div');
-        container.className = 'coupon-container';
-        shelf.parentNode.insertBefore(container, shelf.nextSibling);
-    }
-
-    if (!container) return;
-
-    const colors = ['#ff4757', '#e91e63', '#ff6b81', '#ff5722'];
-    const theme = colors[Math.floor(Math.random() * colors.length)];
-    container.style.setProperty('--theme-color', theme);
-
-    const expiryTimestamp = Date.UTC(2025, 0, 1) + (promoData.expiry * 60 * 1000);
-
-    const updateTimer = () => {
-        const diffMs = expiryTimestamp - Date.now();
-        if (diffMs <= 0) {
-            container.style.display = 'none';
-            clearInterval(window.promoTimer);
-            return;
-        }
-
-        const d = Math.floor(diffMs / 86400000);
-        const h = Math.floor((diffMs % 86400000) / 3600000);
-        const m = Math.floor((diffMs % 3600000) / 60000);
-        const s = Math.floor((diffMs % 60000) / 1000);
-
-        const timerEl = document.getElementById('promo-timer-text');
-        if (timerEl) {
-            timerEl.textContent = d > 0 ? `⏳ ينتهي خلال ${d} يوم` : `⏳ ينتهي خلال ${h}:${m}:${s}`;
-        }
-    };
-
-    container.style.display = 'flex';
-    container.style.flexDirection = 'column';
-
-    container.innerHTML = `
+window.injectPromo=function(promoData){let container=document.querySelector('.coupon-container');const shelf=document.getElementById('dynamic-shelf');if(!promoData||!promoData.code||!promoData.code.trim()){if(container)container.style.display='none';return}
+if(!container&&shelf){container=document.createElement('div');container.className='coupon-container';shelf.parentNode.insertBefore(container,shelf.nextSibling)}
+if(!container)return;const colors=['#ff4757','#e91e63','#ff6b81','#ff5722'];const theme=colors[Math.floor(Math.random()*colors.length)];container.style.setProperty('--theme-color',theme);const expiryTimestamp=Date.UTC(2025,0,1)+(promoData.expiry*60*1000);const updateTimer=()=>{const diffMs=expiryTimestamp-Date.now();if(diffMs<=0){container.style.display='none';clearInterval(window.promoTimer);return}
+const d=Math.floor(diffMs/86400000);const h=Math.floor((diffMs%86400000)/3600000);const m=Math.floor((diffMs%3600000)/60000);const s=Math.floor((diffMs%60000)/1000);const timerEl=document.getElementById('promo-timer-text');if(timerEl){timerEl.textContent=d>0?`⏳ ينتهي خلال ${d} يوم`:`⏳ ينتهي خلال ${h}:${m}:${s}`}};container.style.display='flex';container.style.flexDirection='column';container.innerHTML=`
         <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 10px;">
             <div class="coupon-code" id="couponCode">${promoData.code}</div>
             <button class="copy-button" onclick="copyCoupon('${promoData.code}')">نسخ الكوبون</button>
@@ -277,79 +235,13 @@ window.injectPromo = function(promoData) {
             <span class="qty-badge">🔥 متبقي: ${promoData.quantity} قطعة</span>
             <span id="promo-timer-text" class="timer-nari" style="color: #0048ff; font-weight: 800; font-size: 14px;">⏳ جاري الحساب...</span>
         </div>
-    `;
+    `;if(window.promoTimer)clearInterval(window.promoTimer);window.promoTimer=setInterval(updateTimer,1000);updateTimer()};window.copyCoupon=function(code){const target=code||document.getElementById('couponCode').textContent;const btn=document.querySelector('.copy-button');const done=()=>{if(btn){const old=btn.textContent;btn.textContent="تم! ✅";setTimeout(()=>btn.textContent=old,2000)}};if(navigator.clipboard){navigator.clipboard.writeText(target).then(done)}else{const el=document.createElement("textarea");el.value=target;document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);done()}}
 
-    if (window.promoTimer) clearInterval(window.promoTimer);
-    window.promoTimer = setInterval(updateTimer, 1000);
-    updateTimer();
-};
-
-window.copyCoupon = function(code) {
-    const target = code || document.getElementById('couponCode').textContent;
-    const btn = document.querySelector('.copy-button');
-    const done = () => {
-        if (btn) {
-            const old = btn.textContent;
-            btn.textContent = "تم! ✅";
-            setTimeout(() => btn.textContent = old, 2000);
-        }
-    };
-    if (navigator.clipboard) {
-        navigator.clipboard.writeText(target).then(done);
-    } else {
-        const el = document.createElement("textarea");
-        el.value = target; document.body.appendChild(el);
-        el.select(); document.execCommand('copy');
-        document.body.removeChild(el); done();
-    }
-};
 
 // =================== Chart ===================
 
-window.renderBinaryChart = function(buffer) {
-    try {
-        const view = new DataView(buffer);
-        const priceCount = view.getUint32(8, true);
-        const finalData = [];
-        const currency = (typeof getCurrencySymbol === "function") ? getCurrencySymbol() : "";
-
-        for (let i = 0; i < priceCount; i++) {
-            const offset = 12 + (i * 8);
-            if (offset + 8 > buffer.byteLength) break;
-            const timeInMinutes = view.getUint32(offset, true);
-            const priceRaw = view.getInt32(offset + 4, true);
-            if (timeInMinutes > 0 && priceRaw > 0) {
-                const pDate = new Date(Date.UTC(2025, 0, 1) + (timeInMinutes * 60 * 1000));
-                finalData.push({
-                    date: pDate.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' }),
-                    price: +(priceRaw / 100).toFixed(2),
-                    rawTime: timeInMinutes
-                });
-            }
-        }
-
-        finalData.sort((a, b) => a.rawTime - b.rawTime);
-
-        const tab4 = document.getElementById("tab4");
-        const chartCanvas = document.getElementById("priceChart");
-        if (!finalData.length || !chartCanvas || !tab4) return;
-
-        if (!chartCanvas.parentNode.id.includes("scroll-wrapper")) {
-            const scrollContainer = document.createElement("div");
-            scrollContainer.id = "chart-scroll-wrapper";
-            scrollContainer.style.cssText = "width:100%; overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; padding: 20px 0; box-sizing: border-box;";
-            
-            const innerWrapper = document.createElement("div");
-            innerWrapper.id = "chart-inner-resizer";
-            innerWrapper.style.height = "320px";
-            innerWrapper.style.position = "relative";
-            
-            chartCanvas.parentNode.insertBefore(scrollContainer, chartCanvas);
-            innerWrapper.appendChild(chartCanvas);
-            scrollContainer.appendChild(innerWrapper);
-            
-            const style = document.createElement('style');
-            style.innerHTML = `
+window.renderBinaryChart=function(buffer){try{const view=new DataView(buffer);const priceCount=view.getUint32(8,!0);const finalData=[];const currency=(typeof getCurrencySymbol==="function")?getCurrencySymbol():"";for(let i=0;i<priceCount;i++){const offset=12+(i*8);if(offset+8>buffer.byteLength)break;const timeInMinutes=view.getUint32(offset,!0);const priceRaw=view.getInt32(offset+4,!0);if(timeInMinutes>0&&priceRaw>0){const pDate=new Date(Date.UTC(2025,0,1)+(timeInMinutes*60*1000));finalData.push({date:pDate.toLocaleDateString('en-US',{month:'numeric',day:'numeric',year:'numeric'}),price:+(priceRaw/100).toFixed(2),rawTime:timeInMinutes})}}
+finalData.sort((a,b)=>a.rawTime-b.rawTime);const tab4=document.getElementById("tab4");const chartCanvas=document.getElementById("priceChart");if(!finalData.length||!chartCanvas||!tab4)return;if(!chartCanvas.parentNode.id.includes("scroll-wrapper")){const scrollContainer=document.createElement("div");scrollContainer.id="chart-scroll-wrapper";scrollContainer.style.cssText="width:100%; overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; padding: 20px 0; box-sizing: border-box;";const innerWrapper=document.createElement("div");innerWrapper.id="chart-inner-resizer";innerWrapper.style.height="320px";innerWrapper.style.position="relative";chartCanvas.parentNode.insertBefore(scrollContainer,chartCanvas);innerWrapper.appendChild(chartCanvas);scrollContainer.appendChild(innerWrapper);const style=document.createElement('style');style.innerHTML=`
                 #chart-scroll-wrapper::-webkit-scrollbar {height: 4px;}
                 #chart-scroll-wrapper::-webkit-scrollbar-thumb {background: #ccc; border-radius: 10px;}
                 @media (min-width: 992px) { #chart-inner-resizer { width: 100% !important; } }
@@ -368,26 +260,8 @@ window.renderBinaryChart = function(buffer) {
                     opacity: 0;
                     display: none;
                 }
-            `;
-            document.head.appendChild(style);
-        }
-
-        const resizer = document.getElementById("chart-inner-resizer");
-        const scrollContainer = document.getElementById("chart-scroll-wrapper");
-        
-        const isMobile = window.innerWidth < 768;
-        resizer.style.width = "100%";
-
-        const prices = finalData.map(x => x.price);
-        const dates = finalData.map(x => x.date);
-        const min = Math.min(...prices), max = Math.max(...prices);
-        const avg = +(prices.reduce((a, b) => a + b, 0) / prices.length).toFixed(2);
-        const current = prices[prices.length - 1], prev = prices[prices.length - 2] || current;
-
-        const getArrow = (v, c) => v > c ? `<span style="color:#ef4444;">▲</span>` : v < c ? `<span style="color:#10b981;">▼</span>` : "";
-
-        const diffTotal = (current - prev).toFixed(2);
-        const statsHtml = `
+            `;document.head.appendChild(style)}
+const resizer=document.getElementById("chart-inner-resizer");const scrollContainer=document.getElementById("chart-scroll-wrapper");const isMobile=window.innerWidth<768;resizer.style.width="100%";const prices=finalData.map(x=>x.price);const dates=finalData.map(x=>x.date);const min=Math.min(...prices),max=Math.max(...prices);const avg=+(prices.reduce((a,b)=>a+b,0)/prices.length).toFixed(2);const current=prices[prices.length-1],prev=prices[prices.length-2]||current;const getArrow=(v,c)=>v>c?`<span style="color:#ef4444;">▲</span>`:v<c?`<span style="color:#10b981;">▼</span>`:"";const diffTotal=(current-prev).toFixed(2);const statsHtml=`
             <div class="price-stats">
                 <div class="stat-item current">
                     <strong>السعر الحالي</strong>
@@ -397,175 +271,21 @@ window.renderBinaryChart = function(buffer) {
                 <div class="stat-item"><strong>المتوسط</strong><span>${avg} ${currency}</span></div>
                 <div class="stat-item"><strong>أقل سعر</strong><span>${min} ${currency}</span></div>
                 <div class="stat-item"><strong>أعلى سعر</strong><span>${max} ${currency}</span></div>
-            </div>`;
-
-        const oldStats = tab4.querySelector(".price-stats");
-        if (oldStats) oldStats.remove();
-        scrollContainer.insertAdjacentHTML("afterend", statsHtml);
-
-        let tooltipEl = document.getElementById("chart-tooltip") || Object.assign(document.createElement("div"), {id: "chart-tooltip"});
-        if (!tooltipEl.parentElement) document.body.appendChild(tooltipEl);
-
-        const externalTooltipHandler = (context) => {
-            const { chart, tooltip } = context;
-            if (tooltip.opacity === 0) { tooltipEl.style.opacity = 0; setTimeout(() => { if(tooltipEl.style.opacity == 0) tooltipEl.style.display = "none"; }, 200); return; }
-            
-            tooltipEl.style.display = "block"; 
-            setTimeout(() => { tooltipEl.style.opacity = 1; }, 10);
-            
-            const idx = tooltip.dataPoints[0].dataIndex;
-            const val = tooltip.dataPoints[0].raw;
-            const pVal = idx > 0 ? prices[idx - 1] : val;
-            const diff = +(val - pVal).toFixed(2);
-            const perc = pVal !== 0 ? ((diff / pVal) * 100).toFixed(1) : 0;
-            const arr = diff > 0 ? `<span style="color:#ef4444;">▲</span>` : diff < 0 ? `<span style="color:#10b981;">▼</span>` : "-";
-            
-            tooltipEl.innerHTML = `
+            </div>`;const oldStats=tab4.querySelector(".price-stats");if(oldStats)oldStats.remove();scrollContainer.insertAdjacentHTML("afterend",statsHtml);let tooltipEl=document.getElementById("chart-tooltip")||Object.assign(document.createElement("div"),{id:"chart-tooltip"});if(!tooltipEl.parentElement)document.body.appendChild(tooltipEl);const externalTooltipHandler=(context)=>{const{chart,tooltip}=context;if(tooltip.opacity===0){tooltipEl.style.opacity=0;setTimeout(()=>{if(tooltipEl.style.opacity==0)tooltipEl.style.display="none"},200);return}
+tooltipEl.style.display="block";setTimeout(()=>{tooltipEl.style.opacity=1},10);const idx=tooltip.dataPoints[0].dataIndex;const val=tooltip.dataPoints[0].raw;const pVal=idx>0?prices[idx-1]:val;const diff=+(val-pVal).toFixed(2);const perc=pVal!==0?((diff/pVal)*100).toFixed(1):0;const arr=diff>0?`<span style="color:#ef4444;">▲</span>`:diff<0?`<span style="color:#10b981;">▼</span>`:"-";tooltipEl.innerHTML=`
                 <div style="font-weight:bold;margin-bottom:4px;border-bottom:1px solid #555;padding-bottom:4px;">${dates[idx]}</div>
                 <div>السعر: ${val} ${currency}</div>
                 <div style="font-size:12px;">التغير: ${arr} ${diff} (${perc}%)</div>
-            `;
+            `;const pos=chart.canvas.getBoundingClientRect();const tooltipWidth=tooltipEl.offsetWidth;const screenWidth=window.innerWidth;let leftPos=pos.left+window.pageXOffset+tooltip.caretX+10;if(leftPos+tooltipWidth>screenWidth){leftPos=pos.left+window.pageXOffset+tooltip.caretX-tooltipWidth-10}
+if(leftPos<0)leftPos=10;tooltipEl.style.left=leftPos+'px';tooltipEl.style.top=(pos.top+window.pageYOffset+tooltip.caretY-60)+'px'};const ctx=chartCanvas.getContext("2d");if(window.myPriceChart)window.myPriceChart.destroy();window.myPriceChart=new Chart(ctx,{type:"line",data:{labels:dates,datasets:[{data:prices,borderColor:"#ff6000",backgroundColor:(c)=>{const a=c.chart.chartArea;if(!a)return null;const g=c.chart.ctx.createLinearGradient(0,a.top,0,a.bottom);g.addColorStop(0,'rgba(255, 96, 0, 0.15)');g.addColorStop(1,'rgba(255, 96, 0, 0)');return g},borderWidth:2.5,pointRadius:0,pointHoverRadius:6,pointHitRadius:20,fill:!0,stepped:'before'}]},options:{responsive:!0,maintainAspectRatio:!1,layout:{padding:{top:10,bottom:10}},animation:{duration:400,easing:'easeOutQuart'},interaction:{mode:'index',intersect:!1},plugins:{legend:{display:!1},tooltip:{enabled:!1,external:externalTooltipHandler}},scales:{x:{ticks:{maxRotation:0,autoSkip:!0,maxTicksLimit:isMobile?5:10},grid:{display:!1}},y:{position:'right',grace:'15%',ticks:{precision:2},grid:{color:'#f0f0f0',drawBorder:!1}}}}});if(isMobile)scrollContainer.scrollLeft=scrollContainer.scrollWidth}catch(e){console.error(e)}}
 
-            const pos = chart.canvas.getBoundingClientRect();
-            const tooltipWidth = tooltipEl.offsetWidth;
-            const screenWidth = window.innerWidth;
-            
-            let leftPos = pos.left + window.pageXOffset + tooltip.caretX + 10;
-            if (leftPos + tooltipWidth > screenWidth) {
-                leftPos = pos.left + window.pageXOffset + tooltip.caretX - tooltipWidth - 10;
-            }
-            if (leftPos < 0) leftPos = 10;
-
-            tooltipEl.style.left = leftPos + 'px';
-            tooltipEl.style.top = (pos.top + window.pageYOffset + tooltip.caretY - 60) + 'px';
-        };
-
-        const ctx = chartCanvas.getContext("2d");
-        if (window.myPriceChart) window.myPriceChart.destroy();
-
-        window.myPriceChart = new Chart(ctx, {
-            type: "line",
-            data: {
-                labels: dates,
-                datasets: [{
-                    data: prices,
-                    borderColor: "#ff6000",
-                    backgroundColor: (c) => {
-                        const a = c.chart.chartArea; if (!a) return null;
-                        const g = c.chart.ctx.createLinearGradient(0, a.top, 0, a.bottom);
-                        g.addColorStop(0, 'rgba(255, 96, 0, 0.15)'); g.addColorStop(1, 'rgba(255, 96, 0, 0)');
-                        return g;
-                    },
-                    borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 6, pointHitRadius: 20, fill: true, stepped: 'before'
-                }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false, 
-                layout: { padding: { top: 10, bottom: 10 } },
-                animation: { duration: 400, easing: 'easeOutQuart' },
-                interaction: { mode: 'index', intersect: false },
-                plugins: { legend: { display: false }, tooltip: { enabled: false, external: externalTooltipHandler } },
-                scales: {
-                    x: { ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: isMobile ? 5 : 10 }, grid: { display: false } },
-                    y: { position: 'right', grace: '15%', ticks: { precision: 2 }, grid: { color: '#f0f0f0', drawBorder: false } }
-                }
-            }
-        });
-
-        if (isMobile) scrollContainer.scrollLeft = scrollContainer.scrollWidth;
-
-    } catch (e) { console.error(e); }
-};
-
+    
 // =================== Download Chart ===================
 
-(function() {
-    window.downloadChartAsImage = function() {
-        const chartInstance = window.myPriceChart;
-        if (!chartInstance) return;
-
-        const canvas = document.getElementById("priceChart");
-        const tempCanvas = document.createElement("canvas");
-        const ctx = tempCanvas.getContext("2d");
-        
-        const padding = 40;
-        const headerHeight = 140; 
-        tempCanvas.width = canvas.width + (padding * 2);
-        tempCanvas.height = canvas.height + headerHeight + padding;
-
-        const isDarkMode = document.body.classList.contains('dark-mode');
-        ctx.fillStyle = isDarkMode ? "#121212" : "#ffffff";
-        ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-
-        const productName = document.querySelector("h1")?.innerText || "تقرير الأسعار";
-        
-        const countryCode = localStorage.getItem("Cntry") || "SA";
-        const countryData = {
-               "SA": "السعودية 🇸🇦",
-               "AE": "الإمارات 🇦🇪",
-               "OM": "عُمان 🇴🇲",
-               "MA": "المغرب 🇲🇦",
-               "DZ": "الجزائر 🇩🇿",
-               "TN": "تونس 🇹🇳"
-               };
-        const countryName = countryData[countryCode] || "السعودية";
-
-        ctx.direction = "rtl";
-        ctx.textAlign = "right";
-        
-        ctx.fillStyle = "#e74c3c";
-        ctx.font = "bold 26px Arial";
-        ctx.fillText("بـورصـة الأسـعـار", tempCanvas.width - padding, 45);
-
-        ctx.fillStyle = isDarkMode ? "#eeeeee" : "#2c3e50";
-        ctx.font = "bold 19px Arial";
-        const cleanName = productName.length > 55 ? productName.substring(0, 55) + "..." : productName;
-        ctx.fillText(cleanName, tempCanvas.width - padding, 80);
-
-        ctx.fillStyle = "#3498db";
-        ctx.font = "bold 16px Arial";
-        ctx.fillText("الدولة: " + countryName, tempCanvas.width - padding, 105);
-
-        ctx.fillStyle = "#7f8c8d";
-        ctx.font = "12px Arial";
-        const dateStr = new Date().toLocaleDateString('ar-EG', {year:'numeric', month:'long', day:'numeric'});
-        ctx.fillText(window.location.hostname + " | تحديث " + dateStr, tempCanvas.width - padding, 128);
-
-        ctx.shadowColor = "rgba(0,0,0,0.15)";
-        ctx.shadowBlur = 25;
-        ctx.shadowOffsetY = 12;
-        ctx.drawImage(canvas, padding, headerHeight);
-        
-        ctx.shadowBlur = 0;
-        ctx.strokeStyle = isDarkMode ? "#333" : "#f0f0f0";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(5, 5, tempCanvas.width - 10, tempCanvas.height - 10);
-
-        const imageBase64 = tempCanvas.toDataURL("image/png", 1.0);
-        const downloadLink = document.createElement("a");
-        downloadLink.href = imageBase64;
-        downloadLink.download = `Price-Report-${countryCode}-${new Date().getTime()}.png`;
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
-    };
-
-    const observer = new MutationObserver(() => {
-        const stats = document.querySelector(".price-stats");
-        if (stats && !document.getElementById("btn-download-chart")) {
-            const btnHtml = `
+(function(){window.downloadChartAsImage=function(){const chartInstance=window.myPriceChart;if(!chartInstance)return;const canvas=document.getElementById("priceChart");const tempCanvas=document.createElement("canvas");const ctx=tempCanvas.getContext("2d");const padding=40;const headerHeight=140;tempCanvas.width=canvas.width+(padding*2);tempCanvas.height=canvas.height+headerHeight+padding;const isDarkMode=document.body.classList.contains('dark-mode');ctx.fillStyle=isDarkMode?"#121212":"#ffffff";ctx.fillRect(0,0,tempCanvas.width,tempCanvas.height);const productName=document.querySelector("h1")?.innerText||"تقرير الأسعار";const countryCode=localStorage.getItem("Cntry")||"SA";const countryData={"SA":"السعودية 🇸🇦","AE":"الإمارات 🇦🇪","OM":"عُمان 🇴🇲","MA":"المغرب 🇲🇦","DZ":"الجزائر 🇩🇿","TN":"تونس 🇹🇳"};const countryName=countryData[countryCode]||"السعودية";ctx.direction="rtl";ctx.textAlign="right";ctx.fillStyle="#e74c3c";ctx.font="bold 26px Arial";ctx.fillText("بـورصـة الأسـعـار",tempCanvas.width-padding,45);ctx.fillStyle=isDarkMode?"#eeeeee":"#2c3e50";ctx.font="bold 19px Arial";const cleanName=productName.length>55?productName.substring(0,55)+"...":productName;ctx.fillText(cleanName,tempCanvas.width-padding,80);ctx.fillStyle="#3498db";ctx.font="bold 16px Arial";ctx.fillText("الدولة: "+countryName,tempCanvas.width-padding,105);ctx.fillStyle="#7f8c8d";ctx.font="12px Arial";const dateStr=new Date().toLocaleDateString('ar-EG',{year:'numeric',month:'long',day:'numeric'});ctx.fillText(window.location.hostname+" | تحديث "+dateStr,tempCanvas.width-padding,128);ctx.shadowColor="rgba(0,0,0,0.15)";ctx.shadowBlur=25;ctx.shadowOffsetY=12;ctx.drawImage(canvas,padding,headerHeight);ctx.shadowBlur=0;ctx.strokeStyle=isDarkMode?"#333":"#f0f0f0";ctx.lineWidth=2;ctx.strokeRect(5,5,tempCanvas.width-10,tempCanvas.height-10);const imageBase64=tempCanvas.toDataURL("image/png",1.0);const downloadLink=document.createElement("a");downloadLink.href=imageBase64;downloadLink.download=`Price-Report-${countryCode}-${new Date().getTime()}.png`;document.body.appendChild(downloadLink);downloadLink.click();document.body.removeChild(downloadLink)};const observer=new MutationObserver(()=>{const stats=document.querySelector(".price-stats");if(stats&&!document.getElementById("btn-download-chart")){const btnHtml=`
                 <div style="text-align: center; margin: 25px 0;">
                     <button id="btn-download-chart" onclick="downloadChartAsImage()" 
                         style="padding: 12px 26px; background: #ff6000; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; transition: 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
                         حفظ الرسم البياني 
                     </button>
-                </div>`;
-            stats.insertAdjacentHTML("afterend", btnHtml);
-            const btn = document.getElementById("btn-download-chart");
-            btn.onmouseover = () => { btn.style.background = "#ff1e00"; };
-            btn.onmouseout = () => { btn.style.background = "#ff6e17"; };
-        }
-    });
-
-    observer.observe(document.body, { childList: true, subtree: true });
-})();
+                </div>`;stats.insertAdjacentHTML("afterend",btnHtml);const btn=document.getElementById("btn-download-chart");btn.onmouseover=()=>{btn.style.background="#ff1e00"};btn.onmouseout=()=>{btn.style.background="#ff6e17"}}});observer.observe(document.body,{childList:!0,subtree:!0})})()
