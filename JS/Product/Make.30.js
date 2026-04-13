@@ -224,8 +224,7 @@
             `;
         }
     };
-})(); 
-
+    
 // =================== Promo ===================
 
 window.injectPromo = function(promoData) {
