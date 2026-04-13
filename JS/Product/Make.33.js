@@ -202,11 +202,6 @@
             buyBtn.href = `https://s.click.aliexpress.com/${data.productAffCode}`;
         }
 
-        const moreRev = document.querySelector(".more-reviews-link a");
-        if (moreRev && data.productAffCode) {
-            moreRev.href = `https://s.click.aliexpress.com/${data.productAffCode}`;
-        }
-
         const storeWrapper = document.getElementById('store-bar-wrapper');
         if (storeWrapper && data.storeName) {
             const storeLink = `/p/store.html?store=${data.storeId}`;
@@ -224,8 +219,8 @@
             `;
         }
     };
-    })();
-    
+})();
+
 // =================== Promo ===================
 
 window.injectPromo = function(promoData) {
