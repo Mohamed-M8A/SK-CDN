@@ -2,6 +2,14 @@ const MAP_ENGINE = (function() {
     const BASE_URL = "https://api.iseekprice.com/";
     const REGIONS = ["SA", "AE", "OM", "MA", "DZ", "TN"];
     
+    const RECORD_SIZES = {
+        FEED: 32,
+        LINKS: 100,
+        SKU: 2888,
+        PROMO: 32,
+        CHART: 2932
+    };
+
     async function getFileMap() {
         try {
             const country = (localStorage.getItem("Cntry") || "SA").toUpperCase();
@@ -41,7 +49,7 @@ const MAP_ENGINE = (function() {
 
         const buffer = await res.arrayBuffer();
         const view = new DataView(buffer);
-        const stride = 32;
+        const stride = RECORD_SIZES.FEED;
 
         for (let i = 0; i < buffer.byteLength; i += stride) {
             if (view.getBigUint64(i, true) === BigInt(targetUID)) {
@@ -85,7 +93,8 @@ const MAP_ENGINE = (function() {
         getConfig: getFileMap,
         getFeed: fetchFeedData,
         getRange: fetchBinaryRange,
-        baseUrl: BASE_URL
+        baseUrl: BASE_URL,
+        RECORD_SIZES: RECORD_SIZES
     };
 })();
 
