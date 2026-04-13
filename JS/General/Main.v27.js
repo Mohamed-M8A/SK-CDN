@@ -30,6 +30,7 @@ class Renderer {
     }
 
     static toBase64URL(bytes) {
+        if (!bytes) return "";
         let lastIndex = bytes.length - 1;
         while (lastIndex >= 0 && bytes[lastIndex] === 0) lastIndex--;
         const cleanBytes = bytes.slice(0, lastIndex + 1);
@@ -107,7 +108,6 @@ class Renderer {
 const WIDGET_CONFIG = {
     ROOT_ID: 'souq-widget-root',
     DOMAIN: "https://www.iseekprice.com/",
-    BASE_URL: "https://api.iseekprice.com/",
     PLACEHOLDER: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg_6M_oCTDClXnX0p4KvvHzgjw7X2tBBFzkDp6b057jVwL4KPDL3tscGqe6dKNbLJVbmRDQXlnB3Wbcezf54eTD09j6vLsA7LBsXIEaFX6_Ztqx6e41nWilu1WV4rJjC5AThnbe_vOC-PYH1AMWv0WYgR-QxGp4njSptfwlmmTPBqLMRGzMt0dSElde/s600/%D8%AA%D9%88%D9%81%D9%8A%D8%B1.jpg",
     INITIAL_SIZE: 12,
     BATCH_SIZE: 50
@@ -115,7 +115,7 @@ const WIDGET_CONFIG = {
 
 async function startWidget() {
     const root = document.getElementById(WIDGET_CONFIG.ROOT_ID);
-    if (!root) return;
+    if (!root || !window.MapEngine) return;
     
     root.innerHTML = `
         <div id="product-posts" class="product-grid"></div>
@@ -129,6 +129,13 @@ async function startWidget() {
     
     let currentIndex = 0;
     let storeData = { core: [], feed: new Map() };
+
+    const mapConfig = await window.MapEngine.getConfig();
+    if (!mapConfig) {
+        loader.style.display = 'none';
+        grid.innerHTML = '<div class="error-msg">فشل تحميل خريطة البيانات</div>';
+        return;
+    }
 
     const blob = new Blob([workerCode], { type: 'application/javascript' });
     const worker = new Worker(URL.createObjectURL(blob));
@@ -153,24 +160,20 @@ async function startWidget() {
             renderNextBatch();
         } else if (e.data.type === 'ERROR') {
             loader.style.display = 'none';
-            grid.innerHTML = '<div class="error-msg">حدث خطأ أثناء تحميل البيانات</div>';
+            grid.innerHTML = '<div class="error-msg">حدث خطأ أثناء معالجة البيانات</div>';
         }
     };
 
     const urlParams = new URLSearchParams(window.location.search);
-    const query = urlParams.get('query');
-    const storeId = urlParams.get('store');
-
+    
     loadMoreBtn.onclick = renderNextBatch;
 
-    const currentCountry = (localStorage.getItem("Cntry") || "SA").toUpperCase();
-    
     worker.postMessage({
-        baseUrl: WIDGET_CONFIG.BASE_URL,
-        country: currentCountry,
-        query: query,
-        storeId: storeId,
-        regionConfig: COUNTRY_MAP[currentCountry] || COUNTRY_MAP["SA"]
+        baseUrl: window.MapEngine.baseUrl,
+        coreFile: `core_${mapConfig.core}.bin`,
+        feedFile: mapConfig.feed,
+        query: urlParams.get('query'),
+        storeId: urlParams.get('store')
     });
 }
 
