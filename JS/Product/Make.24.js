@@ -42,26 +42,6 @@
             `;
         },
 
-        drawStars(container, rating) {
-            if (!container) return;
-            const fullStars = Math.floor(rating);
-            const hasHalf = rating % 1 >= 0.5 ? 1 : 0;
-            let starsHTML = "";
-            for (let i = 0; i < fullStars; i++) starsHTML += `<span class="star">★</span>`;
-            if (hasHalf) starsHTML += `<span class="star half">★</span>`;
-            for (let i = 0; i < (5 - fullStars - hasHalf); i++) starsHTML += `<span class="star empty">★</span>`;
-            container.innerHTML = starsHTML;
-        },
-
-        renderReviewSection() {
-            const reviewGroups = document.querySelectorAll('.Customer-Reviews .stars-group');
-            reviewGroups.forEach(group => {
-                const rating = parseFloat(group.getAttribute('data-rating')) || 5;
-                this.drawStars(group, rating);
-            });
-        }
-    };
-
 // =================== Data1 ===================
 
 const init=()=>{UILayout.injectEmptyShelf();UILayout.renderReviewSection()};if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init)}else{init()}
