@@ -19,7 +19,7 @@ class BinaryParser {
             if (allowedIds && !allowedIds.has(id)) continue;
             records.push({
                 id: id,
-                date: view.getUint32(8, true),
+                date: view.getUint32(i + 8, true),
                 path: decoder.decode(uint8.subarray(i + 12, i + 92)).replace(/\\0/g, '').trim(),
                 title: decoder.decode(uint8.subarray(i + 92, i + 292)).replace(/\\0/g, '').trim(),
                 imgSlug: uint8.slice(i + 292, i + 442)
@@ -38,7 +38,6 @@ class BinaryParser {
             const status = view.getUint8(i + 31);
 
             if (targetStoreId !== null && storeId !== targetStoreId) continue;
-            
             if (targetStoreId !== null) storeMatchedIds.add(id);
 
             map.set(id, {
@@ -55,41 +54,40 @@ class BinaryParser {
         }
         return { feedMap: map, matchedIds: storeMatchedIds };
     }
-
-    static parseMeta(buffer) {
-        const map = new Map();
-        const uint8 = new Uint8Array(buffer);
-        const view = new DataView(buffer);
-        for (let i = 0; i < uint8.byteLength; i += 264) {
-            const id = view.getBigUint64(i, true);
-            map.set(id, uint8.slice(i + 8, i + 264));
-        }
-        return map;
-    }
 }
 
 self.onmessage = async (e) => {
-    const { baseUrl, country, query, storeId } = e.data;
+    const { baseUrl, coreFile, metaFile, feedFile, query, storeId } = e.data;
     const CACHE_NAME = 'souq-cache-v1';
 
-    async function getFile(url, hours) {
+    async function getFile(fileName, hours) {
+        const url = baseUrl + fileName;
         const cache = await caches.open(CACHE_NAME);
         const cached = await cache.match(url);
+        
         if (cached) {
             const date = cached.headers.get('date');
-            if (date && (Date.now() - new Date(date).getTime()) < hours * 3600000) return cached.arrayBuffer();
+            if (date && (Date.now() - new Date(date).getTime()) < hours * 3600000) {
+                return cached.arrayBuffer();
+            }
         }
-        const res = await fetch(url + '?v=' + new Date().getHours());
-        if (res.ok) { cache.put(url, res.clone()); return res.arrayBuffer(); }
+        
+        const res = await fetch(url);
+        if (res.ok) { 
+            cache.put(url, res.clone()); 
+            return res.arrayBuffer(); 
+        }
         return null;
     }
 
     try {
         const [coreBuf, feedBuf, metaBuf] = await Promise.all([
-            getFile(baseUrl + 'core.bin', 24),
-            getFile(baseUrl + country.toUpperCase() + '_feed.bin', 1),
-            getFile(baseUrl + 'meta.bin', 24)
+            getFile(coreFile, 24),
+            getFile(feedFile, 1),
+            getFile(metaFile, 24)
         ]);
+
+        if (!coreBuf || !feedBuf) throw new Error("Essential files missing");
 
         let allowedIds = null;
         const targetStore = storeId ? parseInt(storeId) : null;
@@ -105,6 +103,7 @@ self.onmessage = async (e) => {
             let hB = BinaryParser.murmur(query.toLowerCase(), 99);
             let bits = [];
             for (let i = 0; i < 7; i++) bits.push((hA + i * hB) % 2048);
+            
             for (let i = 0; i < metaData.length; i += 264) {
                 let match = true;
                 for (let b of bits) {
