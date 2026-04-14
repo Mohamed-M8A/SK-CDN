@@ -97,7 +97,7 @@ class Renderer {
     renderBatch(products, domain, feedMap) {
         const fragment = document.createDocumentFragment();
         products.forEach(p => {
-            const card = this.createCard(p, domain, feedMap.get(p.id));
+            const card = this.createCard(p, domain, feedMap.get(BigInt(p.id)));
             if (card) fragment.appendChild(card);
         });
         this.container.appendChild(fragment);
