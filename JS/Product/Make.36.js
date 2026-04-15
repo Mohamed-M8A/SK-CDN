@@ -500,7 +500,26 @@ window.renderBinaryChart = function(buffer) {
 // =================== Download Chart ===================
 
 (function() {
-    window.downloadChartAsImage = function() {
+    function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+        const words = text.split(' ');
+        let line = '';
+        let currentY = y;
+        for (let n = 0; n < words.length; n++) {
+            let testLine = line + words[n] + ' ';
+            let metrics = ctx.measureText(testLine);
+            if (metrics.width > maxWidth && n > 0) {
+                ctx.fillText(line, x, currentY);
+                line = words[n] + ' ';
+                currentY += lineHeight;
+            } else {
+                line = testLine;
+            }
+        }
+        ctx.fillText(line, x, currentY);
+        return currentY;
+    }
+
+    window.downloadChartAsImage = async function(action = 'download') {
         const chartInstance = window.myPriceChart;
         if (!chartInstance) return;
 
@@ -509,16 +528,15 @@ window.renderBinaryChart = function(buffer) {
         const ctx = tempCanvas.getContext("2d");
         
         const padding = 40;
-        const headerHeight = 140; 
+        const headerHeight = 160; 
         tempCanvas.width = canvas.width + (padding * 2);
-        tempCanvas.height = canvas.height + headerHeight + padding;
+        tempCanvas.height = canvas.height + headerHeight + padding + 20;
 
         const isDarkMode = document.body.classList.contains('dark-mode');
         ctx.fillStyle = isDarkMode ? "#121212" : "#ffffff";
         ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
 
         const productName = document.querySelector("h1")?.innerText || "تقرير الأسعار";
-        
         const countryCode = localStorage.getItem("Cntry") || "SA";
         const countryData = {
                "SA": "السعودية 🇸🇦",
@@ -534,24 +552,23 @@ window.renderBinaryChart = function(buffer) {
         ctx.textAlign = "right";
         
         ctx.fillStyle = "#e74c3c";
-        ctx.font = "bold 26px Arial";
-        ctx.fillText("بـورصـة الأسـعـار", tempCanvas.width - padding, 45);
+        ctx.font = "bold 28px Arial";
+        ctx.fillText("بـورصـة الأسـعـار", tempCanvas.width - padding, 50);
 
         ctx.fillStyle = isDarkMode ? "#eeeeee" : "#2c3e50";
-        ctx.font = "bold 19px Arial";
-        const cleanName = productName.length > 55 ? productName.substring(0, 55) + "..." : productName;
-        ctx.fillText(cleanName, tempCanvas.width - padding, 80);
+        ctx.font = "bold 20px Arial";
+        const lastTextY = wrapText(ctx, productName, tempCanvas.width - padding, 90, tempCanvas.width - (padding * 2), 28);
 
         ctx.fillStyle = "#3498db";
         ctx.font = "bold 16px Arial";
-        ctx.fillText("الدولة: " + countryName, tempCanvas.width - padding, 105);
+        ctx.fillText("الدولة: " + countryName, tempCanvas.width - padding, lastTextY + 35);
 
         ctx.fillStyle = "#7f8c8d";
-        ctx.font = "12px Arial";
+        ctx.font = "13px Arial";
         const dateStr = new Date().toLocaleDateString('ar-EG', {year:'numeric', month:'long', day:'numeric'});
-        ctx.fillText(window.location.hostname + " | تحديث " + dateStr, tempCanvas.width - padding, 128);
+        ctx.fillText(window.location.hostname + " | تحديث " + dateStr, tempCanvas.width - padding, lastTextY + 60);
 
-        ctx.shadowColor = "rgba(0,0,0,0.15)";
+        ctx.shadowColor = "rgba(0,0,0,0.2)";
         ctx.shadowBlur = 25;
         ctx.shadowOffsetY = 12;
         ctx.drawImage(canvas, padding, headerHeight);
@@ -562,28 +579,55 @@ window.renderBinaryChart = function(buffer) {
         ctx.strokeRect(5, 5, tempCanvas.width - 10, tempCanvas.height - 10);
 
         const imageBase64 = tempCanvas.toDataURL("image/png", 1.0);
-        const downloadLink = document.createElement("a");
-        downloadLink.href = imageBase64;
-        downloadLink.download = `Price-Report-${countryCode}-${new Date().getTime()}.png`;
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
+
+        if (action === 'share' && navigator.share) {
+            const response = await fetch(imageBase64);
+            const blob = await response.blob();
+            const file = new File([blob], `Price-Report.png`, { type: "image/png" });
+            try {
+                await navigator.share({
+                    files: [file],
+                    title: productName,
+                    text: `تقرير أسعار ${productName} من موقع ${window.location.hostname}`
+                });
+            } catch (err) {}
+        } else {
+            const downloadLink = document.createElement("a");
+            downloadLink.href = imageBase64;
+            downloadLink.download = `Price-Report-${countryCode}-${new Date().getTime()}.png`;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+        }
     };
 
     const observer = new MutationObserver(() => {
         const stats = document.querySelector(".price-stats");
-        if (stats && !document.getElementById("btn-download-chart")) {
-            const btnHtml = `
-                <div style="text-align: center; margin: 25px 0;">
-                    <button id="btn-download-chart" onclick="downloadChartAsImage()" 
-                        style="padding: 12px 26px; background: #ff6000; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; transition: 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-                        حفظ الرسم البياني 
+        if (stats && !document.getElementById("btn-download-container")) {
+            const containerHtml = `
+                <div id="btn-download-container" style="display: flex; justify-content: center; gap: 10px; margin: 25px 0; flex-wrap: wrap;">
+                    <button id="btn-download-chart" onclick="downloadChartAsImage('download')" 
+                        style="padding: 12px 24px; background: #ff6000; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; transition: 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 5px;">
+                        <span>⬇️</span> حفظ الصورة
+                    </button>
+                    <button id="btn-share-chart" onclick="downloadChartAsImage('share')" 
+                        style="padding: 12px 24px; background: #3498db; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; transition: 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 5px;">
+                        <span>🔗</span> مشاركة
                     </button>
                 </div>`;
-            stats.insertAdjacentHTML("afterend", btnHtml);
-            const btn = document.getElementById("btn-download-chart");
-            btn.onmouseover = () => { btn.style.background = "#ff1e00"; };
-            btn.onmouseout = () => { btn.style.background = "#ff6e17"; };
+            stats.insertAdjacentHTML("afterend", containerHtml);
+            
+            const btnD = document.getElementById("btn-download-chart");
+            btnD.onmouseover = () => { btnD.style.background = "#ff1e00"; };
+            btnD.onmouseout = () => { btnD.style.background = "#ff6000"; };
+            
+            const btnS = document.getElementById("btn-share-chart");
+            btnS.onmouseover = () => { btnS.style.background = "#2980b9"; };
+            btnS.onmouseout = () => { btnS.style.background = "#3498db"; };
+            
+            if (!navigator.share) {
+                document.getElementById("btn-share-chart").style.display = "none";
+            }
         }
     });
 
