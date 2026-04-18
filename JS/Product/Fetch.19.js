@@ -23,7 +23,7 @@
 
     async function loadMap() {
         try {
-            const res = await fetch(`${BASE_URL}map.json?v=${Date.now()}`);
+            const res = await fetch(`${BASE_URL}General/map.json?v=${Date.now()}`);
             fileMap = await res.json();
             return true;
         } catch (e) { return false; }
@@ -31,14 +31,18 @@
 
     function getCloudName(type) {
         if (!fileMap) return null;
-        if (type === "core" || type === "meta") return `${type}_${fileMap[type]}.bin`;
+        
+        if (type === "core" || type === "meta") {
+            return `General/${type}_${fileMap[type]}.bin`;
+        }
+
         const hash = fileMap.regions[country]?.[type];
         if (!hash) return null;
 
         window.currentFileInfo.size = parseInt(hash.substring(0, 8), 16);
         window.currentFileInfo.records = parseInt(hash.substring(8, 16), 16);
 
-        return `${country}_${type}_${hash}.bin`;
+        return `${country}/${type}_${hash}.bin`;
     }
 
     async function startEngine() {
