@@ -145,23 +145,31 @@ async function startWidget() {
         const worker = new Worker(URL.createObjectURL(blob));
 
         const renderNextBatch = () => {
-            if (storeData.core.length === 0) {
+            if (storeData.core.length === 0 && currentIndex === 0) {
                 grid.innerHTML = '<div class="no-results">لا توجد نتائج تطابق بحثك</div>';
                 return;
             }
-            const size = currentIndex === 0 ? WIDGET_CONFIG.INITIAL_SIZE : WIDGET_CONFIG.BATCH_SIZE;
-            const limit = Math.min(currentIndex + size, storeData.core.length);
+            const limit = Math.min(currentIndex + WIDGET_CONFIG.BATCH_SIZE, storeData.core.length);
             const batch = storeData.core.slice(currentIndex, limit);
-            renderer.renderBatch(batch, WIDGET_CONFIG.DOMAIN, storeData.feed);
-            currentIndex = limit;
+            if (batch.length > 0) {
+                renderer.renderBatch(batch, WIDGET_CONFIG.DOMAIN, storeData.feed);
+                currentIndex = limit;
+            }
             loadMoreBtn.style.display = currentIndex >= storeData.core.length ? 'none' : 'block';
         };
 
         worker.onmessage = (e) => {
-            if (e.data.type === 'DONE') {
-                storeData = e.data;
+            if (e.data.type === 'BATCH') {
+                if (currentIndex === 0) loader.style.display = 'none';
+                storeData.feed = e.data.feed;
+                renderer.renderBatch(e.data.batch, WIDGET_CONFIG.DOMAIN, e.data.feed);
+                currentIndex += e.data.batch.length;
+            } else if (e.data.type === 'DONE') {
+                storeData.core = e.data.core;
                 loader.style.display = 'none';
-                renderNextBatch();
+                if (currentIndex < storeData.core.length) {
+                    loadMoreBtn.style.display = 'block';
+                }
             } else if (e.data.type === 'ERROR') {
                 loader.style.display = 'none';
                 grid.innerHTML = '<div class="error-msg">حدث خطأ أثناء تحميل البيانات</div>';
