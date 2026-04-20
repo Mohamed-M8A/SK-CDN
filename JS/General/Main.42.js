@@ -119,6 +119,7 @@ async function startWidget() {
 
     try {
         const mapRes = await fetch(`${WIDGET_CONFIG.BASE_URL}General/map.json?v=${Date.now()}`);
+        if (!mapRes.ok) throw new Error("Failed to load map.json");
         const fileMap = await mapRes.json();
         const country = localStorage.getItem("Cntry") || "SA";
 
@@ -172,6 +173,7 @@ async function startWidget() {
                 }
             } else if (e.data.type === 'ERROR') {
                 loader.style.display = 'none';
+                console.error("Worker Error details:", e.data.error);
                 grid.innerHTML = '<div class="error-msg">حدث خطأ أثناء تحميل البيانات</div>';
             }
         };
@@ -190,7 +192,7 @@ async function startWidget() {
             storeId: storeId
         });
     } catch (err) {
-        console.error(err);
+        console.error("Widget Startup Error:", err);
     }
 }
 
