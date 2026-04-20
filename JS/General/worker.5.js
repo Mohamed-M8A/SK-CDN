@@ -9,23 +9,14 @@ class BinaryParser {
         return h >>> 0;
     }
 
-    static parseCore(buffer, allowedIds = null) {
-        const decoder = new TextDecoder();
-        const records = [];
-        const uint8 = new Uint8Array(buffer);
-        const view = new DataView(buffer);
-        for (let i = 0; i < uint8.byteLength; i += 442) {
-            const id = view.getBigUint64(i, true);
-            if (allowedIds && !allowedIds.has(id)) continue;
-            records.push({
-                id: id,
-                date: view.getUint32(i + 8, true),
-                path: decoder.decode(uint8.subarray(i + 12, i + 92)).replace(/\\0/g, '').trim(),
-                title: decoder.decode(uint8.subarray(i + 92, i + 292)).replace(/\\0/g, '').trim(),
-                imgSlug: uint8.slice(i + 292, i + 442)
-            });
-        }
-        return records;
+    static parseCoreRecord(uint8, offset, view, decoder) {
+        return {
+            id: view.getBigUint64(offset, true),
+            date: view.getUint32(offset + 8, true),
+            path: decoder.decode(uint8.subarray(offset + 12, offset + 92)).replace(/\\0/g, '').trim(),
+            title: decoder.decode(uint8.subarray(offset + 92, offset + 292)).replace(/\\0/g, '').trim(),
+            imgSlug: uint8.slice(offset + 292, offset + 442)
+        };
     }
 
     static parseFeed(buffer, targetStoreId = null) {
@@ -36,10 +27,8 @@ class BinaryParser {
             const id = view.getBigUint64(i, true);
             const storeId = view.getUint32(i + 8, true);
             const status = view.getUint8(i + 31);
-
             if (targetStoreId !== null && storeId !== targetStoreId) continue;
             if (targetStoreId !== null) storeMatchedIds.add(id);
-
             map.set(id, {
                 original: view.getUint32(i + 12, true) / 100,
                 price: view.getUint32(i + 16, true) / 100,
@@ -58,47 +47,26 @@ class BinaryParser {
 
 self.onmessage = async (e) => {
     const { baseUrl, coreFile, metaFile, feedFile, query, storeId } = e.data;
-    const CACHE_NAME = 'souq-cache-v1';
-
-    async function getFile(fileName, hours) {
-        const url = baseUrl + fileName;
-        const cache = await caches.open(CACHE_NAME);
-        const cached = await cache.match(url);
-        
-        if (cached) {
-            const date = cached.headers.get('date');
-            if (date && (Date.now() - new Date(date).getTime()) < hours * 3600000) {
-                return cached.arrayBuffer();
-            }
-        }
-        
-        const res = await fetch(url);
-        if (res.ok) { 
-            cache.put(url, res.clone()); 
-            return res.arrayBuffer(); 
-        }
-        return null;
-    }
+    const decoder = new TextDecoder();
 
     try {
-        const [coreBuf, feedBuf, metaBuf] = await Promise.all([
-            getFile(coreFile, 24),
-            getFile(feedFile, 1),
-            getFile(metaFile, 24)
+        const [feedRes, metaRes] = await Promise.all([
+            fetch(baseUrl + feedFile),
+            metaFile ? fetch(baseUrl + metaFile) : Promise.resolve(null)
         ]);
 
-        if (!coreBuf || !feedBuf) throw new Error("Essential files missing");
-
-        let allowedIds = null;
-        const targetStore = storeId ? parseInt(storeId) : null;
-        const feedResult = BinaryParser.parseFeed(feedBuf, targetStore);
+        const feedBuf = await feedRes.arrayBuffer();
+        const feedResult = BinaryParser.parseFeed(feedBuf, storeId ? parseInt(storeId) : null);
+        const feedMap = feedResult.feedMap;
         
-        if (targetStore !== null) {
+        let allowedIds = null;
+        if (storeId) {
             allowedIds = feedResult.matchedIds;
-        } else if (query && metaBuf) {
-            allowedIds = new Set();
+        } else if (query && metaRes) {
+            const metaBuf = await metaRes.arrayBuffer();
             const metaData = new Uint8Array(metaBuf);
             const metaView = new DataView(metaBuf);
+            allowedIds = new Set();
             let hA = BinaryParser.murmur(query.toLowerCase(), 42);
             let hB = BinaryParser.murmur(query.toLowerCase(), 99);
             let bits = [];
@@ -113,11 +81,52 @@ self.onmessage = async (e) => {
             }
         }
 
+        const coreRes = await fetch(baseUrl + coreFile);
+        const reader = coreRes.body.getReader();
+        let buffer = new Uint8Array(0);
+        let allProcessedCore = [];
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            let newBuffer = new Uint8Array(buffer.length + value.length);
+            newBuffer.set(buffer);
+            newBuffer.set(value, buffer.length);
+            buffer = newBuffer;
+
+            const recordsInChunk = [];
+            let offset = 0;
+
+            while (offset + 442 <= buffer.length) {
+                const view = new DataView(buffer.buffer, offset, 442);
+                const id = view.getBigUint64(0, true);
+
+                if (!allowedIds || allowedIds.has(id)) {
+                    const record = BinaryParser.parseCoreRecord(buffer, offset, view, decoder);
+                    recordsInChunk.push(record);
+                    allProcessedCore.push(record);
+                }
+                offset += 442;
+            }
+
+            buffer = buffer.slice(offset);
+
+            if (recordsInChunk.length > 0) {
+                self.postMessage({ 
+                    type: 'BATCH', 
+                    batch: recordsInChunk, 
+                    feed: feedMap 
+                });
+            }
+        }
+
         self.postMessage({ 
             type: 'DONE', 
-            core: BinaryParser.parseCore(coreBuf, allowedIds), 
-            feed: feedResult.feedMap
+            core: allProcessedCore, 
+            feed: feedMap 
         });
+
     } catch (err) {
         self.postMessage({ type: 'ERROR', error: err.message });
     }
