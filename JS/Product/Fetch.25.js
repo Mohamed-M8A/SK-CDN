@@ -72,7 +72,7 @@
                     if (typeof window.injectData === "function") window.injectData(initialFullData);
 
                     fetchRange(getCloudName("links"), recordIndex * 100, 100, "LINKS");
-                    if (initialFullData.hasSKU) fetchRange(getCloudName("sku"), recordIndex * 4508, 4508, "SKU");
+                    if (initialFullData.hasSKU) fetchRange(getCloudName("sku"), recordIndex * 5468, 5468, "SKU");
                     if (initialFullData.hasPromo) fetchRange(getCloudName("promo"), recordIndex * 32, 32, "PROMO");
                     fetchRange(getCloudName("fluctuation"), recordIndex * 2932, 2932, "CHART");
                     break;
