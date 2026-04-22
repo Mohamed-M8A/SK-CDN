@@ -31,45 +31,32 @@
 
     function getCloudName(type) {
         if (!fileMap) return null;
-        
-        if (type === "core" || type === "meta") {
-            return `General/${type}_${fileMap[type]}.bin`;
-        }
-
+        if (type === "core" || type === "meta") return `General/${type}_${fileMap[type]}.bin`;
         const hash = fileMap.regions[country]?.[type];
         if (!hash) return null;
-
         window.currentFileInfo.size = parseInt(hash.substring(0, 8), 16);
         window.currentFileInfo.records = parseInt(hash.substring(8, 16), 16);
-
         return `${country}/${type}_${hash}.bin`;
     }
 
     async function startEngine() {
         try {
             if (!await loadMap()) return;
-
             const domUIDStr = document.querySelector(".UID")?.textContent.trim();
             if (!domUIDStr) return;
             const targetUID = BigInt(domUIDStr);
-
             const feedFileName = getCloudName("feed");
             if (!feedFileName) return;
-
             const res = await fetch(`${BASE_URL}${feedFileName}`);
             if (!res.ok) return;
-
             const buffer = await res.arrayBuffer();
             const view = new DataView(buffer);
             const stride = 32;
-
             for (let i = 0; i < buffer.byteLength; i += stride) {
                 if (view.getBigUint64(i, true) === targetUID) {
                     const flags = view.getUint8(i + 31);
                     const recordIndex = i / stride;
-                    
                     window.currentRecordIndex = recordIndex;
-
                     initialFullData = {
                         storeId: view.getUint32(i + 8, true),
                         priceOriginal: view.getUint32(i + 12, true) / 100,
@@ -87,14 +74,11 @@
                         storeAffCode: "",
                         storeName: ""
                     };
-
                     if (typeof window.injectData === "function") window.injectData(initialFullData);
-                    
                     fetchRange(getCloudName("links"), recordIndex * 100, 100, "LINKS");
                     if (initialFullData.hasSKU) fetchRange(getCloudName("sku"), recordIndex * 4508, 4508, "SKU");
                     if (initialFullData.hasPromo) fetchRange(getCloudName("promo"), recordIndex * 32, 32, "PROMO");
                     fetchRange(getCloudName("fluctuation"), recordIndex * 2932, 2932, "CHART");
-                    
                     break;
                 }
             }
@@ -109,7 +93,6 @@
             const buffer = await res.arrayBuffer();
             const view = new DataView(buffer);
             const decoder = new TextDecoder("utf-8");
-
             if (type === "LINKS") {
                 const pCode = decoder.decode(new Uint8Array(buffer, 16, 14)).replace(/\0/g, '').trim();
                 const sCode = decoder.decode(new Uint8Array(buffer, 30, 14)).replace(/\0/g, '').trim();
