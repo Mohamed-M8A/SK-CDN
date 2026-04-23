@@ -118,41 +118,58 @@ window.injectData = function(data) {
     const pOriginal = data.priceOriginal;
     const pDiscounted = data.priceDiscounted;
     const diff = pOriginal - pDiscounted;
+    const hasDiscount = diff > 0.01;
 
-    document.querySelectorAll(".price-original").forEach(el => el.textContent = `${formatPrice(pOriginal)} ${symbol}`);
     document.querySelectorAll(".price-discounted").forEach(el => el.textContent = `${formatPrice(pDiscounted)} ${symbol}`);
 
     const savingEl = document.querySelector(".price-saving");
     const discountEl = document.querySelector(".discount-percentage");
+    const originalPriceEls = document.querySelectorAll(".price-original");
 
-    if (diff > 0 && savingEl) {
-        savingEl.innerHTML = `<span class="save-label">وفر:</span> <span class="save-amount">${formatPrice(diff)} ${symbol}</span>`;
-        const weightedDiff = diff / weight; 
-        let color = "#7f8c8d";
-        if (weightedDiff < 100) color = "#16a085";
-        else if (weightedDiff < 400) color = "#1abc9c";
-        else if (weightedDiff < 600) color = "#3498db";
-        else if (weightedDiff < 900) color = "#2ecc71";
-        else if (weightedDiff < 1200) color = "#e67e22";
-        else if (weightedDiff < 1600) color = "#c0392b";
-        else if (weightedDiff < 2000) color = "#f5008b";
-        else if (weightedDiff < 3000) color = "#8e44ad";
-        else color = "#FFD700";
+    if (hasDiscount) {
+        originalPriceEls.forEach(el => {
+            el.textContent = `${formatPrice(pOriginal)} ${symbol}`;
+            el.style.display = "inline-block";
+        });
         
-        savingEl.style.color = color;
-        savingEl.style.fontWeight = "bold";
+        if (discountEl) {
+            discountEl.textContent = `-${Math.round((diff / pOriginal) * 100)}%`;
+            discountEl.style.display = "inline-block";
+        }
 
-        if (weightedDiff >= 500) {
-            const saveAmount = savingEl.querySelector(".save-amount");
-            if (saveAmount && !saveAmount.querySelector(".fire-gif")) {
-                const fireGif = document.createElement("img");
-                fireGif.src = "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj5J9EL4a9cV3VWmcK1ZYD6OYEB-1APv9gggocpaa7jAJXdgvX8Q7QiaAZC9NxcN25f8MTRSYD6SKwT1LSjL0SB1ovJH1SSkRmqH2y3f1NzWGkC0BE-gpj5bTc1OKi3Rfzh44sAAJSvOS5uq7Ut9ETN-V9LgKim0dkmEVmqUWa-2ZGA7FvMAYrVaJgn/w199-h200/fire%20(1).gif";
-                fireGif.style.cssText = "width:20px; vertical-align:middle; margin-left:5px;";
-                fireGif.classList.add("fire-gif");
-                saveAmount.appendChild(fireGif);
+        if (savingEl) {
+            savingEl.style.display = "block";
+            savingEl.innerHTML = `<span class="save-label">وفر:</span> <span class="save-amount">${formatPrice(diff)} ${symbol}</span>`;
+            const weightedDiff = diff / weight; 
+            let color = "#7f8c8d";
+            if (weightedDiff < 100) color = "#16a085";
+            else if (weightedDiff < 400) color = "#1abc9c";
+            else if (weightedDiff < 600) color = "#3498db";
+            else if (weightedDiff < 900) color = "#2ecc71";
+            else if (weightedDiff < 1200) color = "#e67e22";
+            else if (weightedDiff < 1600) color = "#c0392b";
+            else if (weightedDiff < 2000) color = "#f5008b";
+            else if (weightedDiff < 3000) color = "#8e44ad";
+            else color = "#FFD700";
+            
+            savingEl.style.color = color;
+            savingEl.style.fontWeight = "bold";
+
+            if (weightedDiff >= 500) {
+                const saveAmount = savingEl.querySelector(".save-amount");
+                if (saveAmount && !saveAmount.querySelector(".fire-gif")) {
+                    const fireGif = document.createElement("img");
+                    fireGif.src = "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj5J9EL4a9cV3VWmcK1ZYD6OYEB-1APv9gggocpaa7jAJXdgvX8Q7QiaAZC9NxcN25f8MTRSYD6SKwT1LSjL0SB1ovJH1SSkRmqH2y3f1NzWGkC0BE-gpj5bTc1OKi3Rfzh44sAAJSvOS5uq7Ut9ETN-V9LgKim0dkmEVmqUWa-2ZGA7FvMAYrVaJgn/w199-h200/fire%20(1).gif";
+                    fireGif.style.cssText = "width:20px; vertical-align:middle; margin-left:5px;";
+                    fireGif.classList.add("fire-gif");
+                    saveAmount.appendChild(fireGif);
+                }
             }
         }
-        if (discountEl) discountEl.textContent = `-${Math.round((diff / pOriginal) * 100)}%`;
+    } else {
+        originalPriceEls.forEach(el => el.style.display = "none");
+        if (discountEl) discountEl.style.display = "none";
+        if (savingEl) savingEl.style.display = "none";
     }
 
     document.querySelectorAll(".fee-value").forEach(el => {
@@ -220,7 +237,6 @@ window.injectData = function(data) {
         `;
     }
 };
-
 })();
 
 // =================== Promo ===================
