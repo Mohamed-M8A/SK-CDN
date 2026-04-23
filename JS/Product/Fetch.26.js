@@ -1,6 +1,7 @@
 (function() {
     const BASE_URL = "https://api.iseekprice.com/";
     const IMG_BASE_URL = "https://ae-pic-a1.aliexpress-media.com/kf/";
+    const CACHE_NAME = 'souq-cache-v1';
     const country = (localStorage.getItem("Cntry") || "SA").toUpperCase();
     
     let initialFullData = null;
@@ -38,8 +39,16 @@
             const feedFileName = getCloudName("feed");
             if (!feedFileName) return;
 
-            const res = await fetch(`${BASE_URL}${feedFileName}`);
-            if (!res.ok) return;
+            const url = BASE_URL + feedFileName;
+            const cache = await caches.open(CACHE_NAME);
+            let res = await cache.match(url);
+
+            if (!res) {
+                res = await fetch(url);
+                if (res.ok) cache.put(url, res.clone());
+            }
+
+            if (!res || !res.ok) return;
             const buffer = await res.arrayBuffer();
             const view = new DataView(buffer);
             const stride = 32;
@@ -49,6 +58,11 @@
                     const recordIndex = i / stride;
                     window.currentRecordIndex = recordIndex;
                     const flags = view.getUint8(i + 31);
+                    
+                    const inStock = (flags & 0x20) !== 0;
+                    if (!inStock && typeof window.showWarningUI === "function") {
+                        window.showWarningUI();
+                    }
 
                     initialFullData = {
                         storeId: view.getUint32(i + 8, true),
@@ -61,7 +75,7 @@
                         minDelivery: view.getUint8(i + 29),
                         maxDelivery: view.getUint8(i + 30),
                         sudStatus: flags & 0x1F,
-                        isGlobal: (flags & 0x20) !== 0,
+                        isGlobal: inStock,
                         hasSKU: (flags & 0x40) !== 0,
                         hasPromo: (flags & 0x80) !== 0,
                         productAffCode: "",
