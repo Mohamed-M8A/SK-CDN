@@ -7,8 +7,6 @@
     let initialFullData = null;
     let fileMap = null;
 
-    window.currentFileInfo = { size: 0, records: 0 };
-
     const cleanProps = (str) => {
         if (!str) return "_";
         return str.replace(/\|/g, " - ").trim();
@@ -19,12 +17,10 @@
             const cache = await caches.open(CACHE_NAME);
             const url = `${BASE_URL}General/map.json`;
             let res = await cache.match(url);
-            
             if (!res) {
                 res = await fetch(`${url}?v=${Date.now()}`);
                 if (res.ok) cache.put(url, res.clone());
             }
-            
             fileMap = await res.json();
             return true;
         } catch (e) { return false; }
@@ -39,22 +35,11 @@
     }
 
     function injectWarningPopup() {
-        if (typeof window.showWarningUI === "function") {
-            window.showWarningUI();
-            return;
-        }
-        const overlay = document.createElement("div");
-        overlay.style = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);font-family:sans-serif;";
-        const modal = document.createElement("div");
-        modal.style = "background:#fff;padding:30px;border-radius:20px;max-width:340px;width:90%;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,0.3);direction:rtl;";
-        modal.innerHTML = `
-            <div style="font-size:50px;margin-bottom:15px;">⚠️</div>
-            <h3 style="margin:0 0 10px;color:#d93025;font-size:20px;">تنبيه عدم التوفر</h3>
-            <p style="margin:0 0 25px;color:#555;font-size:15px;line-height:1.6;">هذا المنتج قد لا يكون متوفراً حالياً للشحن إلى منطقتك. يمكنك تصفح بدائل أخرى في الأسفل.</p>
-            <button onclick="this.parentElement.parentElement.remove()" style="background:#d93025;color:#fff;border:none;padding:12px;border-radius:12px;cursor:pointer;font-weight:bold;width:100%;font-size:16px;">حسناً، فهمت</button>
-        `;
-        overlay.appendChild(modal);
-        document.body.appendChild(overlay);
+        const div = document.createElement("div");
+        div.style = "position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#fff;border:1px solid #d93025;padding:15px;border-radius:8px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.15);direction:rtl;text-align:center;width:280px;font-family:sans-serif;";
+        div.innerHTML = `<p style="margin:0 0 10px;color:#d93025;font-weight:bold;font-size:14px;">⚠️ المنتج قد لا يكون متوفراً حالياً</p>
+                         <button onclick="this.parentElement.remove()" style="background:#f1f1f1;color:#333;border:none;padding:5px 15px;border-radius:4px;cursor:pointer;font-size:12px;">إغلاق</button>`;
+        document.body.appendChild(div);
     }
 
     async function startEngine() {
@@ -69,7 +54,6 @@
             const url = BASE_URL + feedFileName;
             const cache = await caches.open(CACHE_NAME);
             let res = await cache.match(url);
-
             if (!res) {
                 res = await fetch(url);
                 if (res.ok) cache.put(url, res.clone());
@@ -83,10 +67,9 @@
             for (let i = 0; i < buffer.byteLength; i += stride) {
                 if (view.getBigUint64(i, true) === targetUID) {
                     const recordIndex = i / stride;
-                    window.currentRecordIndex = recordIndex;
                     const flags = view.getUint8(i + 31);
-                    
                     const inStock = (flags & 0x20) !== 0;
+                    
                     if (!inStock) injectWarningPopup();
 
                     initialFullData = {
@@ -103,9 +86,7 @@
                         isGlobal: inStock,
                         hasSKU: (flags & 0x40) !== 0,
                         hasPromo: (flags & 0x80) !== 0,
-                        productAffCode: "",
-                        storeAffCode: "",
-                        storeName: ""
+                        productAffCode: "", storeAffCode: "", storeName: ""
                     };
 
                     if (typeof window.injectData === "function") window.injectData(initialFullData);
@@ -148,17 +129,12 @@
                     if (offset + 182 > buffer.byteLength) break;
                     const pDisc = view.getUint32(offset + 4, true) / 100;
                     if (pDisc === 0) continue;
-
                     const imgSlug = decoder.decode(new Uint8Array(buffer, offset + 14, 40)).replace(/\0/g, '').trim();
                     const rawProps = decoder.decode(new Uint8Array(buffer, offset + 54, 128)).replace(/\0/g, '').trim();
-
                     skuList.push({
-                        skuIdx: s,
-                        priceOriginal: view.getUint32(offset, true) / 100,
-                        priceDiscounted: pDisc,
-                        shippingFee: view.getUint32(offset + 8, true) / 100,
-                        minDelivery: view.getUint8(offset + 12),
-                        maxDelivery: view.getUint8(offset + 13),
+                        skuIdx: s, priceOriginal: view.getUint32(offset, true) / 100,
+                        priceDiscounted: pDisc, shippingFee: view.getUint32(offset + 8, true) / 100,
+                        minDelivery: view.getUint8(offset + 12), maxDelivery: view.getUint8(offset + 13),
                         image: IMG_BASE_URL + imgSlug + (imgSlug.includes('.') ? "" : ".jpg"),
                         props: cleanProps(rawProps)
                     });
@@ -179,15 +155,11 @@
     }
 
     window.updateSKUPrice = function(item) {
-        window.selectedSkuIndex = item.skuIdx;
         if (initialFullData && typeof window.injectData === "function") {
             window.injectData({
-                ...initialFullData,
-                priceOriginal: item.priceOriginal,
-                priceDiscounted: item.priceDiscounted,
-                shippingFee: item.shippingFee,
-                minDelivery: item.minDelivery,
-                maxDelivery: item.maxDelivery
+                ...initialFullData, priceOriginal: item.priceOriginal,
+                priceDiscounted: item.priceDiscounted, shippingFee: item.shippingFee,
+                minDelivery: item.minDelivery, maxDelivery: item.maxDelivery
             });
         }
         const variantEl = document.querySelector(".variant-value");
@@ -195,7 +167,6 @@
     };
 
     window.resetToInitialData = function() {
-        window.selectedSkuIndex = 255;
         if (initialFullData && typeof window.injectData === "function") {
             window.injectData(initialFullData);
             const variantEl = document.querySelector(".variant-value");
