@@ -34,7 +34,7 @@ class BinaryParser {
                 status: { 
                     promo: (status >> 7) & 1, 
                     multiSku: (status >> 6) & 1,
-                    isGlobal: (status >> 5) & 1,
+                    inStock: (status >> 5) & 1,
                     sud: status & 0x1F 
                 }
             });
@@ -59,66 +59,56 @@ self.onmessage = async (e) => {
     const CACHE_NAME = 'souq-cache-v1';
     const decoder = new TextDecoder();
 
-    async function getFileStreamOrBuffer(fileName, hours) {
+    async function getFile(fileName, hours) {
         const url = baseUrl + fileName;
         const cache = await caches.open(CACHE_NAME);
         const cached = await cache.match(url);
         if (cached) {
             const date = cached.headers.get('date');
-            if (date && (Date.now() - new Date(date).getTime()) < hours * 3600000) {
-                return cached;
-            }
+            if (date && (Date.now() - new Date(date).getTime()) < hours * 3600000) return cached;
         }
         const res = await fetch(url);
-        if (res.ok) {
-            cache.put(url, res.clone());
-            return res;
-        }
+        if (res.ok) { cache.put(url, res.clone()); return res; }
         return null;
     }
 
     try {
-        const [feedRes, metaRes] = await Promise.all([
-            getFileStreamOrBuffer(feedFile, 1),
-            metaRes = metaFile ? getFileStreamOrBuffer(metaFile, 24) : Promise.resolve(null)
-        ]);
-
+        const feedRes = await getFile(feedFile, 1);
+        if (!feedRes) throw new Error("Feed not found");
         const feedBuf = await feedRes.arrayBuffer();
         const { map: feedMap, matchedIds: storeMatchedIds } = BinaryParser.parseFeed(feedBuf, storeId ? parseInt(storeId) : null);
 
         let allowedIds = storeId ? storeMatchedIds : null;
 
-        if (query && metaRes) {
-            const metaBuf = await metaRes.arrayBuffer();
-            const metaData = new Uint8Array(metaBuf);
-            const metaView = new DataView(metaBuf);
-            const searchMatchedIds = new Set();
-            let hA = BinaryParser.murmur(query.toLowerCase(), 42), hB = BinaryParser.murmur(query.toLowerCase(), 99);
-            let bits = [];
-            for (let i = 0; i < 7; i++) bits.push((hA + i * hB) % 2048);
-            
-            for (let i = 0; i < metaData.length; i += 264) {
-                let match = true;
-                for (let b of bits) {
-                    if (!(metaData[i + 8 + Math.floor(b / 8)] & (1 << (b % 8)))) { match = false; break; }
+        if (query && metaFile) {
+            const metaRes = await getFile(metaFile, 24);
+            if (metaRes) {
+                const metaBuf = await metaRes.arrayBuffer();
+                const metaData = new Uint8Array(metaBuf);
+                const metaView = new DataView(metaBuf);
+                const searchMatchedIds = new Set();
+                let hA = BinaryParser.murmur(query.toLowerCase(), 42), hB = BinaryParser.murmur(query.toLowerCase(), 99);
+                let bits = [];
+                for (let i = 0; i < 7; i++) bits.push((hA + i * hB) % 2048);
+                for (let i = 0; i < metaData.length; i += 264) {
+                    let match = true;
+                    for (let b of bits) { if (!(metaData[i + 8 + Math.floor(b / 8)] & (1 << (b % 8)))) { match = false; break; } }
+                    if (match) searchMatchedIds.add(metaView.getBigUint64(i, true));
                 }
-                if (match) searchMatchedIds.add(metaView.getBigUint64(i, true));
+                allowedIds = storeId ? new Set([...searchMatchedIds].filter(id => storeMatchedIds.has(id))) : searchMatchedIds;
             }
-            allowedIds = storeId ? new Set([...searchMatchedIds].filter(id => storeMatchedIds.has(id))) : searchMatchedIds;
         }
 
-        const coreRes = await getFileStreamOrBuffer(coreFile, 24);
+        const coreRes = await getFile(coreFile, 24);
+        if (!coreRes) throw new Error("Core not found");
         const reader = coreRes.body.getReader();
         let leftover = new Uint8Array(0);
 
         while (true) {
             const { done, value } = await reader.read();
             if (done) break;
-
             let combined = new Uint8Array(leftover.length + value.length);
-            combined.set(leftover);
-            combined.set(value, leftover.length);
-
+            combined.set(leftover); combined.set(value, leftover.length);
             let records = [];
             let offset = 0;
             while (offset + 442 <= combined.length) {
@@ -131,9 +121,7 @@ self.onmessage = async (e) => {
             leftover = combined.slice(offset);
             if (records.length > 0) self.postMessage({ type: 'BATCH', batch: records, feed: feedMap });
         }
-
         self.postMessage({ type: 'DONE' });
-
     } catch (err) {
         self.postMessage({ type: 'ERROR', error: err.message });
     }
