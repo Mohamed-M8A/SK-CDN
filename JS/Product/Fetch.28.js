@@ -38,16 +38,23 @@
         return `${country}/${type}_${hash}.bin`;
     }
 
-    function injectWarningMessage() {
+    function injectWarningPopup() {
         if (typeof window.showWarningUI === "function") {
             window.showWarningUI();
             return;
         }
-        const container = document.querySelector(".product-essential") || document.body;
-        const msg = document.createElement("div");
-        msg.style = "background:#ff000021;color:#d93025;padding:12px;margin:10px 0;border-radius:8px;border:1px solid #d93025;text-align:center;font-weight:bold;font-size:14px;direction:rtl;";
-        msg.innerHTML = "⚠️ تنبيه: قد لا يكون هذا المنتج متوفراً حالياً في منطقتك.";
-        container.prepend(msg);
+        const overlay = document.createElement("div");
+        overlay.style = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);font-family:sans-serif;";
+        const modal = document.createElement("div");
+        modal.style = "background:#fff;padding:30px;border-radius:20px;max-width:340px;width:90%;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,0.3);direction:rtl;";
+        modal.innerHTML = `
+            <div style="font-size:50px;margin-bottom:15px;">⚠️</div>
+            <h3 style="margin:0 0 10px;color:#d93025;font-size:20px;">تنبيه عدم التوفر</h3>
+            <p style="margin:0 0 25px;color:#555;font-size:15px;line-height:1.6;">هذا المنتج قد لا يكون متوفراً حالياً للشحن إلى منطقتك. يمكنك تصفح بدائل أخرى في الأسفل.</p>
+            <button onclick="this.parentElement.parentElement.remove()" style="background:#d93025;color:#fff;border:none;padding:12px;border-radius:12px;cursor:pointer;font-weight:bold;width:100%;font-size:16px;">حسناً، فهمت</button>
+        `;
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
     }
 
     async function startEngine() {
@@ -80,7 +87,7 @@
                     const flags = view.getUint8(i + 31);
                     
                     const inStock = (flags & 0x20) !== 0;
-                    if (!inStock) injectWarningMessage();
+                    if (!inStock) injectWarningPopup();
 
                     initialFullData = {
                         storeId: view.getUint32(i + 8, true),
