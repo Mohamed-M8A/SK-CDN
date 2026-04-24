@@ -101,7 +101,7 @@ async function loadMap() {
                     if (typeof window.injectData === "function") window.injectData(initialFullData);
 
                     fetchRange(getCloudName("links"), recordIndex * 100, 100, "LINKS");
-                    if (initialFullData.hasSKU) fetchRange(getCloudName("sku"), recordIndex * 5468, 5468, "SKU");
+                    if (initialFullData.hasSKU) fetchRange(getCloudName("sku"), recordIndex * 6428, 6428, "SKU");
                     if (initialFullData.hasPromo) fetchRange(getCloudName("promo"), recordIndex * 32, 32, "PROMO");
                     fetchRange(getCloudName("fluctuation"), recordIndex * 2932, 2932, "CHART");
                     break;
@@ -134,12 +134,12 @@ async function loadMap() {
             } else if (type === "SKU") {
                 const skuList = [];
                 for (let s = 0; s < 30; s++) {
-                    const offset = 8 + (s * 182);
-                    if (offset + 182 > buffer.byteLength) break;
+                    const offset = 8 + (s * 214);
+                    if (offset + 214 > buffer.byteLength) break;
                     const pDisc = view.getUint32(offset + 4, true) / 100;
                     if (pDisc === 0) continue;
                     const imgSlug = decoder.decode(new Uint8Array(buffer, offset + 14, 40)).replace(/\0/g, '').trim();
-                    const rawProps = decoder.decode(new Uint8Array(buffer, offset + 54, 128)).replace(/\0/g, '').trim();
+                    const rawProps = decoder.decode(new Uint8Array(buffer, offset + 54, 160)).replace(/\0/g, '').trim();
                     skuList.push({
                         skuIdx: s, priceOriginal: view.getUint32(offset, true) / 100,
                         priceDiscounted: pDisc, shippingFee: view.getUint32(offset + 8, true) / 100,
