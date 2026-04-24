@@ -13,11 +13,7 @@
     };
 
 async function loadMap() {
-        if (window.fileMap) {
-            fileMap = window.fileMap;
-            return true;
-        }
-        return !!fileMap; 
+        return (fileMap !== null); 
     }
 
     function getCloudName(type) {
