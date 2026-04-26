@@ -16,12 +16,15 @@ class BinaryParser {
         for (let i = 0; i < buffer.byteLength; i += 32) {
             const id = view.getBigUint64(i, true);
             if (id === 0n) continue;
+
             const status = view.getUint8(i + 31);
             const isVisible = (status & 0x20) !== 0;
             if (!isVisible) continue;
+
             const storeId = view.getUint32(i + 8, true);
             if (targetStoreId !== null && storeId !== targetStoreId) continue;
             if (targetStoreId !== null) matchedIds.add(id);
+
             map.set(id, {
                 original: view.getUint32(i + 12, true) / 100,
                 price: view.getUint32(i + 16, true) / 100,
@@ -53,17 +56,24 @@ class BinaryParser {
 
 self.onmessage = async (e) => {
     const { baseUrl, coreFile, metaFile, feedFile, query, storeId } = e.data;
+    const CACHE_NAME = 'ISeek-Cache-v1';
     const decoder = new TextDecoder();
 
-    async function fetchFresh(fileName) {
-        const url = baseUrl + fileName + "?t=" + Date.now();
-        const res = await fetch(url, { cache: 'no-store' });
-        if (res.ok) return res;
+    async function getFile(fileName, hours) {
+        const url = baseUrl + fileName;
+        const cache = await caches.open(CACHE_NAME);
+        const cached = await cache.match(url);
+        if (cached) {
+            const date = cached.headers.get('date');
+            if (date && (Date.now() - new Date(date).getTime()) < hours * 3600000) return cached;
+        }
+        const res = await fetch(url);
+        if (res.ok) { cache.put(url, res.clone()); return res; }
         return null;
     }
 
     try {
-        const feedRes = await fetchFresh(feedFile);
+        const feedRes = await getFile(feedFile, 1);
         if (!feedRes) throw new Error("Feed not found");
         const feedBuf = await feedRes.arrayBuffer();
         const { map: feedMap, matchedIds: storeMatchedIds } = BinaryParser.parseFeed(feedBuf, storeId ? parseInt(storeId) : null);
@@ -71,7 +81,7 @@ self.onmessage = async (e) => {
         let allowedIds = storeId ? storeMatchedIds : null;
 
         if (query && metaFile) {
-            const metaRes = await fetchFresh(metaFile);
+            const metaRes = await getFile(metaFile, 24);
             if (metaRes) {
                 const metaBuf = await metaRes.arrayBuffer();
                 const metaData = new Uint8Array(metaBuf);
@@ -89,7 +99,7 @@ self.onmessage = async (e) => {
             }
         }
 
-        const coreRes = await fetchFresh(coreFile);
+        const coreRes = await getFile(coreFile, 24);
         if (!coreRes) throw new Error("Core not found");
         const reader = coreRes.body.getReader();
         let leftover = new Uint8Array(0);
@@ -116,4 +126,4 @@ self.onmessage = async (e) => {
         self.postMessage({ type: 'ERROR', error: err.message });
     }
 };
-\`;
+`;
