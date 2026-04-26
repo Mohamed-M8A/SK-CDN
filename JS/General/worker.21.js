@@ -59,7 +59,7 @@ self.onmessage = async (e) => {
     const CACHE_NAME = 'ISeek-Cache-v1';
     const decoder = new TextDecoder();
 
-    async function getFile(fileName, hours) {
+async function getFile(fileName, hours) {
         const url = baseUrl + fileName;
         const cache = await caches.open(CACHE_NAME);
         const cached = await cache.match(url);
@@ -68,11 +68,15 @@ self.onmessage = async (e) => {
             if (date && (Date.now() - new Date(date).getTime()) < hours * 3600000) return cached;
         }
         const res = await fetch(url);
-        if (res.ok) { cache.put(url, res.clone()); return res; }
+        if (res.ok) { 
+            await cache.put(url, res.clone()); 
+            return res; 
+        }
         return null;
     }
 
     try {
+        await getFile('General/map.json', 1);
         const feedRes = await getFile(feedFile, 1);
         if (!feedRes) throw new Error("Feed not found");
         const feedBuf = await feedRes.arrayBuffer();
