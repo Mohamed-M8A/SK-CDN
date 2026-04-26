@@ -57,10 +57,7 @@ self.onmessage = async (e) => {
 
     async function fetchFresh(fileName) {
         const url = baseUrl + fileName + "?t=" + Date.now();
-        const res = await fetch(url, { 
-            cache: 'no-store',
-            headers: { 'Pragma': 'no-cache', 'Cache-Control': 'no-cache' }
-        });
+        const res = await fetch(url, { cache: 'no-store' });
         if (res.ok) return res;
         return null;
     }
@@ -119,4 +116,4 @@ self.onmessage = async (e) => {
         self.postMessage({ type: 'ERROR', error: err.message });
     }
 };
-`;
+\`;
