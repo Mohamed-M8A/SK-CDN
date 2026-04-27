@@ -72,7 +72,6 @@ self.onmessage = async (e) => {
     }
 
     try {
-        await getFile('General/map.json', 1);
         const feedRes = await getFile(feedFile, 1);
         if (!feedRes) throw new Error("Feed not found");
         const feedBuf = await feedRes.arrayBuffer();
